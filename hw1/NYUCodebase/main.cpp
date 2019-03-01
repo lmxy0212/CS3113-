@@ -61,19 +61,24 @@ int main(int argc, char *argv[])
     GLuint bakugoTexture = LoadTexture(RESOURCE_FOLDER"bakugou.png");
     GLuint todorokiTexture = LoadTexture(RESOURCE_FOLDER"todoroki.png");
     GLuint bombTexture = LoadTexture(RESOURCE_FOLDER"bomb.png");
-    glm::mat4 projectionMatrix = glm::mat4(1.0f);
-    glm::mat4 modelMatrix = glm::mat4(1.0f);
     glm::mat4 viewMatrix = glm::mat4(1.0f);
-    projectionMatrix = glm::ortho(-1.777f, 1.777f, -1.0f, 1.0f, -1.0f, 1.0f);
+    glm::mat4 modelMatrix = glm::mat4(1.0f);
+    glm::mat4 projectionMatrix = glm::ortho(-1.62f, 1.62f, -1.0f, 1.0f, -1.0f, 1.0f);
+    program.SetProjectionMatrix(projectionMatrix);
+    program.SetViewMatrix(viewMatrix);
+
     glUseProgram(program.programID);
     
     ShaderProgram program1;
     program1.Load(RESOURCE_FOLDER"vertex.glsl", RESOURCE_FOLDER"fragment.glsl");
-    glm::mat4 projectionMatrix1 = glm::mat4(1.0f);
-    glm::mat4 modelMatrix1 = glm::mat4(1.0f);
-    glm::mat4 viewMatrix1 = glm::mat4(1.0f);
-    projectionMatrix1 = glm::ortho(-7.0f, 7.0f, -4.0f, 4.0f, -1.0f, 1.0f);
+    program1.SetProjectionMatrix(projectionMatrix);
+    program1.SetViewMatrix(viewMatrix);
     glUseProgram(program1.programID);
+    program1.SetColor(0.0f,0.0f, 0.0f, 0.5f);
+    
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glClearColor(1.0f, 0.5f, 0.0f,1.0f);
     
     float lastFrameTicks = 0.0f;
     float angle = 0.0f;
@@ -95,16 +100,12 @@ int main(int argc, char *argv[])
         translateDis += elapsed*0.5f;
         
         //drawing
-        
         glClear(GL_COLOR_BUFFER_BIT);
-        
+       
         //draw triangle
-        program1.SetModelMatrix(modelMatrix1);
-        program1.SetProjectionMatrix(projectionMatrix1);
-        program1.SetViewMatrix(viewMatrix1);
+        modelMatrix = glm::mat4(1.0f);
+        program1.SetModelMatrix(modelMatrix);
         
-//        program1.SetModelMatrix(modelMatrix1);
-
         float vertices[] = {0.5f, -0.5f, 0.0f, 0.5f, -0.5f, -0.5f};
         glEnableVertexAttribArray(program1.positionAttribute);
         glVertexAttribPointer(program1.positionAttribute, 2, GL_FLOAT, false, 0, vertices);
@@ -113,12 +114,10 @@ int main(int argc, char *argv[])
         glDisableVertexAttribArray(program1.positionAttribute);
         
         //        texture todoroki
-        program.SetModelMatrix(modelMatrix);
-        program.SetProjectionMatrix(projectionMatrix);
-        program.SetViewMatrix(viewMatrix);
 
         modelMatrix = glm::mat4(1.0f);
         modelMatrix = glm::translate(modelMatrix, glm::vec3(+1.15f, -0.3f, 0.0f));
+        modelMatrix = glm::scale(modelMatrix, glm::vec3(0.7f, 0.7f, 0.0f));
         program.SetModelMatrix(modelMatrix);
         glBindTexture(GL_TEXTURE_2D,todorokiTexture);
 
@@ -140,6 +139,7 @@ int main(int argc, char *argv[])
             translateDis = -1.0f;
         modelMatrix = glm::translate(modelMatrix, glm::vec3(translateDis,0.0f, 0.0f));
         modelMatrix = glm::rotate(modelMatrix, -angle, glm::vec3(0.0f, 0.0f, 1.0f));
+        modelMatrix = glm::scale(modelMatrix, glm::vec3(0.7f, 0.7f, 0.0f));
         program.SetModelMatrix(modelMatrix);
         glBindTexture(GL_TEXTURE_2D, bombTexture);
 
@@ -159,6 +159,7 @@ int main(int argc, char *argv[])
 
         modelMatrix = glm::mat4(1.0f);
         modelMatrix = glm::translate(modelMatrix, glm::vec3(-1.15f, -0.3f, 0.0f));
+        modelMatrix = glm::scale(modelMatrix, glm::vec3(0.7f, 0.7f, 0.0f));
         program.SetModelMatrix(modelMatrix);
 
         glBindTexture(GL_TEXTURE_2D, bakugoTexture);

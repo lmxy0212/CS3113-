@@ -20,11 +20,11 @@
 		6DEF23C11B96CC2600BCE792 /* fragment.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 6DEF23BB1B96CC2600BCE792 /* fragment.glsl */; };
 		6DEF23C31B96CC2600BCE792 /* ShaderProgram.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6DEF23BE1B96CC2600BCE792 /* ShaderProgram.cpp */; };
 		6DEF23C41B96CC2600BCE792 /* vertex.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 6DEF23C01B96CC2600BCE792 /* vertex.glsl */; };
-		B579FFF4222884B800F4A016 /* durian.jpg in Resources */ = {isa = PBXBuildFile; fileRef = B579FFEF222884B800F4A016 /* durian.jpg */; };
-		B579FFF6222884B800F4A016 /* Lychee.jpg in Resources */ = {isa = PBXBuildFile; fileRef = B579FFF1222884B800F4A016 /* Lychee.jpg */; };
-		B579FFF922290AA200F4A016 /* bakugou.png in Resources */ = {isa = PBXBuildFile; fileRef = B579FFF822290AA200F4A016 /* bakugou.png */; };
-		B579FFFB22290C0900F4A016 /* bomb.png in Resources */ = {isa = PBXBuildFile; fileRef = B579FFFA22290C0900F4A016 /* bomb.png */; };
-		B579FFFD22290CA500F4A016 /* todoroki.png in Resources */ = {isa = PBXBuildFile; fileRef = B579FFFC22290CA500F4A016 /* todoroki.png */; };
+		B57900022229B23F00F4A016 /* Lychee.jpg in Resources */ = {isa = PBXBuildFile; fileRef = B579FFFE2229B23F00F4A016 /* Lychee.jpg */; };
+		B57900032229B23F00F4A016 /* durian.jpg in Resources */ = {isa = PBXBuildFile; fileRef = B579FFFF2229B23F00F4A016 /* durian.jpg */; };
+		B57900042229B23F00F4A016 /* todoroki.png in Resources */ = {isa = PBXBuildFile; fileRef = B57900002229B23F00F4A016 /* todoroki.png */; };
+		B57900052229B23F00F4A016 /* bakugou.png in Resources */ = {isa = PBXBuildFile; fileRef = B57900012229B23F00F4A016 /* bakugou.png */; };
+		B57900072229B28400F4A016 /* bomb.png in Resources */ = {isa = PBXBuildFile; fileRef = B57900062229B28400F4A016 /* bomb.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -47,11 +47,11 @@
 		6DEF23BE1B96CC2600BCE792 /* ShaderProgram.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ShaderProgram.cpp; sourceTree = "<group>"; };
 		6DEF23BF1B96CC2600BCE792 /* ShaderProgram.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ShaderProgram.h; sourceTree = "<group>"; };
 		6DEF23C01B96CC2600BCE792 /* vertex.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = vertex.glsl; sourceTree = "<group>"; };
-		B579FFEF222884B800F4A016 /* durian.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = durian.jpg; sourceTree = "<group>"; };
-		B579FFF1222884B800F4A016 /* Lychee.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = Lychee.jpg; sourceTree = "<group>"; };
-		B579FFF822290AA200F4A016 /* bakugou.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = bakugou.png; sourceTree = "<group>"; };
-		B579FFFA22290C0900F4A016 /* bomb.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = bomb.png; sourceTree = "<group>"; };
-		B579FFFC22290CA500F4A016 /* todoroki.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = todoroki.png; sourceTree = "<group>"; };
+		B57900002229B23F00F4A016 /* todoroki.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = todoroki.png; sourceTree = "<group>"; };
+		B57900012229B23F00F4A016 /* bakugou.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = bakugou.png; sourceTree = "<group>"; };
+		B57900062229B28400F4A016 /* bomb.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = bomb.png; sourceTree = "<group>"; };
+		B579FFFE2229B23F00F4A016 /* Lychee.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = Lychee.jpg; sourceTree = "<group>"; };
+		B579FFFF2229B23F00F4A016 /* durian.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = durian.jpg; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -131,18 +131,18 @@
 		6D5A86E119AE5CAA0066C1FD /* Code */ = {
 			isa = PBXGroup;
 			children = (
-				B579FFFC22290CA500F4A016 /* todoroki.png */,
-				B579FFFA22290C0900F4A016 /* bomb.png */,
-				B579FFF822290AA200F4A016 /* bakugou.png */,
-				B579FFEF222884B800F4A016 /* durian.jpg */,
-				B579FFF1222884B800F4A016 /* Lychee.jpg */,
 				6DEF23BB1B96CC2600BCE792 /* fragment.glsl */,
+				B57900062229B28400F4A016 /* bomb.png */,
 				6DE9D2F01BA6AB8C002D599C /* fragment_textured.glsl */,
 				6DC707691BA7273500225B7D /* vertex_textured.glsl */,
 				6DEF23BE1B96CC2600BCE792 /* ShaderProgram.cpp */,
 				6DEF23BF1B96CC2600BCE792 /* ShaderProgram.h */,
 				6DEF23C01B96CC2600BCE792 /* vertex.glsl */,
 				6D5A86B919AE5C710066C1FD /* main.cpp */,
+				B57900012229B23F00F4A016 /* bakugou.png */,
+				B579FFFF2229B23F00F4A016 /* durian.jpg */,
+				B579FFFE2229B23F00F4A016 /* Lychee.jpg */,
+				B57900002229B23F00F4A016 /* todoroki.png */,
 			);
 			name = Code;
 			sourceTree = "<group>";
@@ -203,15 +203,15 @@
 				6D5A86B819AE5C710066C1FD /* InfoPlist.strings in Resources */,
 				6DEF23C11B96CC2600BCE792 /* fragment.glsl in Resources */,
 				6DE9D2F11BA6AB8C002D599C /* fragment_textured.glsl in Resources */,
-				B579FFF4222884B800F4A016 /* durian.jpg in Resources */,
+				B57900032229B23F00F4A016 /* durian.jpg in Resources */,
+				B57900022229B23F00F4A016 /* Lychee.jpg in Resources */,
 				6D5A86C619AE5C710066C1FD /* Images.xcassets in Resources */,
-				B579FFF6222884B800F4A016 /* Lychee.jpg in Resources */,
 				6D5A86BE19AE5C710066C1FD /* Credits.rtf in Resources */,
+				B57900052229B23F00F4A016 /* bakugou.png in Resources */,
 				6DEF23C41B96CC2600BCE792 /* vertex.glsl in Resources */,
-				B579FFFD22290CA500F4A016 /* todoroki.png in Resources */,
-				B579FFF922290AA200F4A016 /* bakugou.png in Resources */,
+				B57900042229B23F00F4A016 /* todoroki.png in Resources */,
 				6DC7076A1BA7273500225B7D /* vertex_textured.glsl in Resources */,
-				B579FFFB22290C0900F4A016 /* bomb.png in Resources */,
+				B57900072229B28400F4A016 /* bomb.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
