@@ -61,8 +61,9 @@ public:
     }
     float x = -1.45f;
     float y = 0.0f;
-//    float velocity_x = 1.0f;
     float velocity_y = 3.0f;
+    float half_width = 0.125f;
+    float half_height = 0.25f;
 };
 
 class P2 {
@@ -82,8 +83,9 @@ public:
     }
     float x = 1.45f;
     float y = 0.0f;
-//    float velocity_x = 1.0f;
     float velocity_y = 3.0f;
+    float half_width = 0.125f;
+    float half_height = 0.25f;
 };
 
 class Ball {
@@ -103,10 +105,13 @@ public:
     }
     float x = 0.0f;
     float y = 0.0f;
-    float velocity_x = 1.25f;
-    float velocity_y = 1.25f;
+    float velocity_x = 0.8f;
+    float velocity_y = 0.4f;
     float direction_x = 1.0f;
-    float direction_y = 0.5f;
+    float direction_y = 1.0f;
+    float half_width = 0.05f;
+    float half_height = 0.05f;
+    
 };
 
 
@@ -146,46 +151,51 @@ void processEvents(SDL_Event& event, bool& done, P1& left, P2& right, float& ela
         left.y += left.velocity_y * elapsed;
     }
     else if (keys[SDL_SCANCODE_S]) {
-        left.y += (-1.0f) * left.velocity_y * elapsed;
+        left.y -= left.velocity_y * elapsed;
     }
     else if (keys[SDL_SCANCODE_UP]) {
         right.y += right.velocity_y * elapsed;
     }
     else if (keys[SDL_SCANCODE_DOWN]) {
-        right.y += (-1.0f) * right.velocity_y * elapsed;
+        right.y -= right.velocity_y * elapsed;
     }
 }
 
 void update(P1& left, P2& right, Ball& pong, bool& done, float& elapsed) {
-    if(left.y >= 0.74f){
-        left.y = 0.74f;
-    }else if(left.y <= -0.74f){
-        left.y = -0.74f;
+    //update the ball
+    pong.x += elapsed * pong.velocity_x * pong.direction_x;
+    pong.y += elapsed * pong.velocity_y * pong.direction_y;
+    
+    if(left.y + left.half_height >= 1.0f){ //pattle hit the wall
+        left.y = 1.0f - left.half_height;
+    }else if(left.y - left.half_height <= -1.0f){
+        left.y = -1.0f + left.half_height;
     }
-    if(right.y >= 0.74f){
-        right.y = 0.74f;
-    }else if(right.y <= -0.74f){
-        right.y = -0.74f;
+    if(right.y + right.half_height >= 1.0f){
+        right.y = 1.0f - right.half_height;
+    }else if(right.y - right.half_height <= -1.0f){
+        right.y = -1.0f + right.half_height;
     }
-    if (pong.x >= 1.57f) {
+    //check who wins
+    if (pong.x - pong.half_width >= 1.62f) {
         cout << "Player One Wins!\n";
         done = true;
-    }else if (pong.x <= -1.57f) {
+    }else if (pong.x + pong.half_width <= -1.62f) {
         cout << "Player Two Wins!\n";
         done = true;
-    }else if (abs(pong.y) >= 0.95f) {
+    }else if (abs(pong.y) + pong.half_height >= 1.0f) {
+        //ball hit the wall
         pong.direction_y = -pong.direction_y;
         pong.x += elapsed * pong.velocity_x * pong.direction_x;
         pong.y += elapsed * pong.velocity_y * pong.direction_y;
-    }else if (abs(left.y- pong.y) <= 0.3f && abs(abs(left.x)- abs(pong.x)) <= 0.17f) {
+    }else if (abs(left.y- pong.y) - (pong.half_height + left.half_height) < 0 && abs(left.x- pong.x) - (pong.half_width + left.half_width) < 0) {
+        //ball hit the pattle
         pong.direction_x = -pong.direction_x;
         pong.x += elapsed * pong.velocity_x * pong.direction_x;
         pong.y += elapsed * pong.velocity_y * pong.direction_y;
-    }else if (abs(right.y- pong.y) <= 0.3f && abs(abs(left.x)- abs(pong.x)) <= 0.17f) {
+    }else if (abs(right.y- pong.y) - (pong.half_height + right.half_height) < 0 && abs(right.x- pong.x) - (pong.half_width + right.half_width) < 0) {
+        //ball hit the pattle
         pong.direction_x = -pong.direction_x;
-        pong.x += elapsed * pong.velocity_x * pong.direction_x;
-        pong.y += elapsed * pong.velocity_y * pong.direction_y;
-    }else {
         pong.x += elapsed * pong.velocity_x * pong.direction_x;
         pong.y += elapsed * pong.velocity_y * pong.direction_y;
     }
