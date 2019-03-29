@@ -29,6 +29,10 @@ SDL_Event event;
 enum GameMode {STATE_MAIN_MENU, STATE_GAME_LEVEL, STATE_GAME_OVER};
 GameMode mode = STATE_MAIN_MENU;
 
+#define FIXED_TIMESTEP 0.0166666f
+#define MAX_TIMESTEPS 6
+float accumulator = 0.0f;
+
 const int MAX_BULLETS = 30;
 //const int MAX_ENEMIES = 15;
 int bulletIndex = 0;
@@ -103,7 +107,7 @@ void DrawText(ShaderProgram &program, int fontTexture, string text, float x, flo
 //uniform sprite
 class SheetSprite {
 public:
-    SheetSprite();
+    SheetSprite(){};
     SheetSprite(unsigned int input_textureID, float input_u, float input_v, float input_width, float input_height, float
                 input_size){
         this -> textureID = input_textureID;
@@ -113,17 +117,18 @@ public:
         this -> height = input_height;
         this -> size = input_size;
     }
-    void Draw(ShaderProgram &program,float x, float y);
+    void Draw(ShaderProgram &program);
     float size;
     unsigned int textureID;
     float u;
     float v;
     float width;
     float height;
+    glm::vec2 trueSize;
 };
 
-//draw sprite w/ index at (x,y)
-void SheetSprite::Draw(ShaderProgram &program,float x, float y) {
+
+void SheetSprite::Draw(ShaderProgram &program) {
     glBindTexture(GL_TEXTURE_2D, textureID);
     GLfloat texCoords[] = {
         u, v+height,
@@ -141,6 +146,9 @@ void SheetSprite::Draw(ShaderProgram &program,float x, float y) {
         0.5f * size * aspect, 0.5f * size,
         -0.5f * size * aspect, -0.5f * size ,
         0.5f * size * aspect, -0.5f * size};
+    
+    trueSize.x = size * aspect;
+    trueSize.y = size;
     
     glVertexAttribPointer(program.positionAttribute, 2, GL_FLOAT, false, 0, vertices);
     glEnableVertexAttribArray(program.positionAttribute);
@@ -172,14 +180,14 @@ public:
         modelMatrix = glm::translate(modelMatrix, glm::vec3(position.x, position.y, 1.0f));
         program.SetModelMatrix(modelMatrix);//move
         
-        sprite.Draw(p,position.x,position.y);//draw entity using sprite.draw
+        sprite.Draw(p);//draw entity using sprite.draw
     };
-    void update() {
+    void update(float elapsed) {
         position.x += velocity.x * elapsed;
         position.y += velocity.y * elapsed;
     }
     bool collision_check(Entity &e){
-        if((abs(e.position.x-position.x) - 1/2*(e.size.x+size.x))<0 &&(abs(e.position.y-position.y) - 1/2*(e.size.y+size.y))<0){
+        if((abs(e.position.x-position.x) - (1/2)*(e.sprite.trueSize.x+sprite.trueSize.x))<0 &&(abs(e.position.y-position.y) - (1/2)*(e.sprite.trueSize.y+sprite.trueSize.y))<0){
             return true;
         }else
             return false;
@@ -233,7 +241,7 @@ void setUp(){
     program.SetColor(1.0f, 0.5f, 0.0f,1.0f);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClearColor(1.0f, 0.5f, 0.0f, 1.0f);
 }
 
 void processEvents() {
@@ -257,6 +265,7 @@ void processEvents() {
                 else if(event.key.keysym.scancode == SDL_SCANCODE_SPACE && bulletTimer >=1) {
                     state.bullets[bulletIndex].position.x = state.entities[0].position.x;
                     state.bullets[bulletIndex].position.y = state.entities[0].position.y;
+                    state.bullets[bulletIndex].velocity.y = 3.0f;
                     bulletIndex++;
                     if(bulletIndex > MAX_BULLETS){
                         bulletIndex = 0;
@@ -275,27 +284,24 @@ void processEvents() {
     }
 }
 
-void update() {
-    glClear(GL_COLOR_BUFFER_BIT);
+void update(float elapsed) {
     const Uint8* keys = SDL_GetKeyboardState(NULL);
-    
-    float ticks = (float)SDL_GetTicks()/1000.0f;
-    elapsed = ticks - lastFrameTicks;
-    lastFrameTicks = ticks;
+//    cout << "elapsed" << elapsed << "\n";
     modelMatrix = glm::mat4(1.0f);
     
     switch (mode) {
         case STATE_MAIN_MENU:
             break;
         case STATE_GAME_LEVEL:
-            if(keys[SDL_SCANCODE_LEFT] && state.entities[0].position.x-state.entities[0].size.x >= -1.62){
-                state.entities[0].velocity.x = -2;
-            }else if(keys[SDL_SCANCODE_RIGHT] && state.entities[0].position.x-state.entities[0].size.x <= 1.62){
-                state.entities[0].velocity.x = 2;
-            }else{
-                state.entities[0].velocity.x = 0;
+            if(keys[SDL_SCANCODE_LEFT] && state.entities[0].position.x-(state.entities[0].sprite.trueSize.x/2) >= -1.62){
+                state.entities[0].velocity.x = -1.5f;
+            }else if(keys[SDL_SCANCODE_RIGHT] && state.entities[0].position.x+(state.entities[0].sprite.trueSize.x/2) <= 1.62){
+                state.entities[0].velocity.x = 1.5f;
             }
-            state.entities[0].update();
+            else{
+                state.entities[0].velocity.x = 0.0f;
+            }
+            state.entities[0].update(elapsed);
             
             //need more code here
             //if enemy collide with left/right wall -> reverse direction -> move downwards
@@ -303,18 +309,23 @@ void update() {
             for(Entity &e: state.enemies){
                 for(Entity &b: state.bullets){
                     if(b.collision_check(e)){
+                        cout << "true\n";
                         e.position.x = 1000;
                         b.position.x = -1000;
                         state.score++;
                     }
                 }
-                if(e.collision_check(state.entities[0]))
-                    done = true;
+//                if(e.collision_check(state.entities[0]))
+//                    done = true;
                 
-//                e.update();
+                
             }
             for(Entity &b: state.bullets){
-                b.update();
+                b.update(elapsed);
+            }
+            for(Entity &e: state.enemies){
+                e.update(elapsed);
+                
             }
             bulletTimer += elapsed;
             if(state.score == 19){
@@ -329,15 +340,21 @@ void update() {
 
 void render() {
     glClear(GL_COLOR_BUFFER_BIT);
-    DrawText(program, fontTexture, "Score: "+to_string(state.score), -1.73,0.95,0.05,0.01);
     switch (mode) {
         case STATE_MAIN_MENU:
             DrawText(program, fontTexture, "Welcome to Space Invadors <3 ", -1.12f,0.0f,0.05f, 0.01f);
-            DrawText(program, fontTexture, "HINT: Press left/Right to move and Space to shoot ", 0.2f, 0.1f, -3.45f, 1.0f);
-            DrawText(program, fontTexture, "Press Space To Start", 0.5f, 0.08f, -0.8f, -0.5f);
+            DrawText(program, fontTexture, "HINT: Press left/Right to move and Space to shoot ", -1.3f,-0.2f, 0.05f, 0.01f);
+            DrawText(program, fontTexture, "Press Space To Start", -1.12f,-0.4f, 0.05f, 0.01f);
             break;
         case STATE_GAME_LEVEL:
+            DrawText(program, fontTexture, "Score: "+to_string(state.score), -1.33,0.95,0.05,0.01);
             for(Entity &e: state.entities){
+                e.draw(program);
+            }
+            for(Entity &e: state.enemies){
+                e.draw(program);
+            }
+            for(Entity &e: state.bullets){
                 e.draw(program);
             }
             break;
@@ -357,32 +374,46 @@ int main(int argc, char *argv[])
     SheetSprite myBullet = SheetSprite(spriteTexture, 259.0f/1024.0f, 0.0f/512.0f, 257.0f/1024.0f, 301.0f/512.0f, 0.2f);
     
 //Entity(const string& Type, SheetSprite& input_sprite, float x, float y, float v_x, float v_y, float size_x, float size_y)
-    state.entities.push_back(Entity("player",myBakugo,0.0f,-1.5f,2.0f,0.0f,0.85f,1.0f));
+    Entity player = Entity("player",myBakugo,0.0f,-0.7f,3.0f,0.0f,2.0f,1.0f);
+    state.entities.push_back(player);
     
-//    float x = -1.5;
-//    float y = 0.3;
-//    for(int i = 0; i < 3; i ++){
-//        for(int j = 0; j < 3; j++){
-//            state.enemies.push_back(Entity("enemy",myEnemy,x,y,2.0f,0.0f,0.85f,1.0f));
-//            x += 0.3;
-//        }
-//        y += 0.2;
-//    }
-//
-//    for(int i = 0; i < MAX_BULLETS; i++){
-//        state.bullets.push_back(Entity("bullet",myBullet,0.0f,-1.5f,0.3f,0.0f,0.85f,1.0f));
-//    }
-//    while (!done) {
-//        float ticks = (float)SDL_GetTicks() / 1000.0f;
-//        elapsed = ticks - lastFrameTicks;
-//        lastFrameTicks = ticks;
-    
-//        processEvents()
-//        update();
-//        render();
+    float x = -1.5;
+    float y = 0.3;
+    for(int i = 0; i < 3; i ++){
+        for(int j = 0; j < 10; j++){
+            state.enemies.push_back(Entity("enemy",myEnemy,x,y,0.0f,0.0f,2.0f,1.0f));
+            x += 0.3;
+        }
+        x = -1.5;
+        y += 0.2;
+    }
+
+    for(int i = 0; i < MAX_BULLETS; i++){
+        state.bullets.push_back(Entity("bullet",myBullet,0.0f,-1.5f,0.0f,0.0f,0.85f,1.0f));
+    }
+    while (!done) {
+        float ticks = (float)SDL_GetTicks()/1000.0f;
+        float elapsed = ticks - lastFrameTicks;
+        lastFrameTicks = ticks;
         
-//        SDL_GL_SwapWindow(displayWindow);
-//    }
+        elapsed += accumulator;
+        if(elapsed < FIXED_TIMESTEP) {
+            accumulator = elapsed;
+            continue;
+            
+        }
+        while(elapsed >= FIXED_TIMESTEP) {
+            update(FIXED_TIMESTEP);
+            elapsed -= FIXED_TIMESTEP;
+        }
+        accumulator = elapsed;
+        
+        processEvents();
+//        update();
+        render();
+        
+        SDL_GL_SwapWindow(displayWindow);
+    }
     
     SDL_Quit();
     return 0;
