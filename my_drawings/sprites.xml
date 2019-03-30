@@ -1,0 +1,5 @@
+<TextureAtlas imagePath="sprites.png">
+	<SubTexture name="bakugou.png" x="518" y="0" width="257" height="301"/>
+	<SubTexture name="bomb.png" x="259" y="0" width="257" height="301"/>
+	<SubTexture name="todoroki.png" x="0" y="0" width="257" height="301"/>
+</TextureAtlas>
