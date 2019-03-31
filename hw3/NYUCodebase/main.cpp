@@ -139,7 +139,7 @@ void SheetSprite::Draw(ShaderProgram &program) {
         u, v+height,
         u+width, v+height
     };
-    float aspect = width / height;
+    float aspect = width*2.0f / height;
     float vertices[] = {
         -0.5f * size * aspect, -0.5f * size,
         0.5f * size * aspect, 0.5f * size,
@@ -320,12 +320,12 @@ void update(float elapsed) {
                 if ((e.position.x-(e.sprite.trueSize.x*0.5f) <= -1.62)){
                     for(Entity &enemy: state.enemies){
                         enemy.position.y -= 0.07f;
-                        enemy.position.x += 0.4f;
+                        enemy.position.x += 0.3f;
                     }
                 }else if(e.position.x+(e.sprite.trueSize.x*0.5f) >= 1.62f){
                     for(Entity &enemy: state.enemies){
                         enemy.position.y -= 0.07f;
-                        enemy.position.x -= 0.4f;
+                        enemy.position.x -= 0.3f;
                     }
                 }
             }
@@ -387,6 +387,8 @@ void render() {
         case STATE_GAME_OVER:
             if(state.score == 7){
                 DrawText(program, fontTexture, "Awwwww! You Win >w<", -1.12f,0.0f,0.05f, 0.01f);
+                DrawText(program, fontTexture, "Awesome ®Bakugo <3",-1.12f,-0.4f, 0.05f, 0.01f);
+
             }
             else{
                 DrawText(program, fontTexture, "YOU DIED huh",-1.12f,-0.0f, 0.05f, 0.01f);
