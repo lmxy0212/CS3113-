@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.2" tiledversion="1.2.3" orientation="orthogonal" renderorder="right-down" width="9" height="12" tilewidth="16" tileheight="16" infinite="0" nextlayerid="4" nextobjectid="19">
+ <tileset firstgid="1" source="MySprites.tsx"/>
+ <layer id="1" name="Tile Layer 1" width="9" height="12">
+  <data encoding="base64">
+   DAAAAAwAAAAMAAAADAAAAAwAAAAMAAAADAAAAAwAAAAMAAAAIQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAhAAAAIQAAAAcAAAAAAAAAAAAAAAAAAABhAAAAYgAAAAAAAAAhAAAAIQAAAAAAAAB0AAAABwAAAAcAAAAAAAAABwAAAAcAAAAhAAAAIQAAAAAAAAAAAAAAAAAAAAAAAAByAAAAcwAAAAAAAAAhAAAAIQAAAAcAAAAHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAhAAAAIQAAAGEAAABiAAAAAAAAAAAAAAAHAAAABwAAAAAAAAAhAAAAIQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAcQAAAAAAAAAhAAAAIQAAAAAAAAAAAAAABwAAAAcAAAAAAAAAAAAAAAAAAAAhAAAAIQAAABEAAAAAAAAAAAAAAAAAAAAAAAAABwAAAAcAAAAhAAAAIQAAACIAAAATAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAhAAAAIQAAACIAAAAjAAAAEgAAABIAAAASAAAAEgAAABIAAAAUAAAA
+  </data>
+ </layer>
+ <objectgroup id="2" name="Entities">
+  <object id="17" name="player" type="player" gid="81" x="20.5503" y="77.4371" width="16" height="16"/>
+  <object id="18" name="key" type="key" gid="87" x="60.7322" y="39.3701" width="16" height="16"/>
+ </objectgroup>
+</map>

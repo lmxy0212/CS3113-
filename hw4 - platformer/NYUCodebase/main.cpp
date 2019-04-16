@@ -21,6 +21,9 @@
 #define RESOURCE_FOLDER "NYUCodebase.app/Contents/Resources/"
 #endif
 
+#define FRICTION_X 0.2f
+#define FRICTION_Y 0.1f
+#define GRAVITY 2.0f
 using namespace std;
 //globals
 ShaderProgram program;
@@ -32,7 +35,6 @@ enum GameMode {STATE_MAIN_MENU, STATE_GAME_LEVEL, STATE_GAME_OVER};
 GameMode mode = STATE_MAIN_MENU;
 vector<float> vertexData;
 vector<float> texCoordData;
-
 #define FIXED_TIMESTEP 0.0166666f
 #define MAX_TIMESTEPS 6
 float accumulator = 0.0f;
@@ -43,6 +45,7 @@ float scale = .1;
 float elapsed = 0.0f;
 float lastFrameTicks = 0.0f;
 bool done = false;
+bool initial = true;
 
 SDL_Window* displayWindow;
 
@@ -110,12 +113,34 @@ void DrawText(ShaderProgram &program, int fontTexture, string text, float x, flo
     glDisableVertexAttribArray(program.texCoordAttribute);
 }
 
-void DrawSpriteSheetSprite(ShaderProgram &program, int index, int spriteCountX,
-                           int spriteCountY) {
-    float u = (float)(((int)index) % spriteCountX) / (float) spriteCountX;
-    float v = (float)(((int)index) / spriteCountX) / (float) spriteCountY;
-    float spriteWidth = 1.0/(float)spriteCountX;
-    float spriteHeight = 1.0/(float)spriteCountY;
+class SheetSprite {
+public:
+    SheetSprite(){};
+    SheetSprite(unsigned int input_textureID, float ind,float
+                input_size){
+        this -> textureID = input_textureID;
+        this -> index = ind;
+//        this -> width = input_width;
+//        this -> height = input_height;
+        this -> spriteWidth = 1.0/(float)sprite_count_x;
+        this -> spriteHeight = 1.0/(float)sprite_count_y;
+        this -> size = input_size;
+    }
+    void Draw(ShaderProgram &program);
+    float size;
+    unsigned int textureID;
+    float width;
+    float height;
+    float index;
+    float spriteWidth;
+    float spriteHeight;
+    glm::vec2 trueSize;
+};
+
+void SheetSprite::Draw(ShaderProgram &program) {
+    float u = (float)(((int)index) % sprite_count_x) / (float) sprite_count_y;
+    float v = (float)(((int)index) / sprite_count_x) / (float) sprite_count_y;
+    
     float texCoords[] = {
         u, v+spriteHeight,
         u+spriteWidth, v,
@@ -124,8 +149,8 @@ void DrawSpriteSheetSprite(ShaderProgram &program, int index, int spriteCountX,
         u, v+spriteHeight,
         u+spriteWidth, v+spriteHeight
     };
-    float vertices[] = {-0.5f, -0.5f, 0.5f, 0.5f, -0.5f, 0.5f, 0.5f, 0.5f,  -0.5f,
-        -0.5f, 0.5f, -0.5f};
+    float vertices[] = {-0.5f*size, -0.5f*size, 0.5f*size, 0.5f*size, -0.5f*size, 0.5f*size, 0.5f*size, 0.5f*size,  -0.5f*size,
+        -0.5f*size, 0.5f*size, -0.5f*size};
     // draw this data
     glVertexAttribPointer(program.positionAttribute, 2, GL_FLOAT, false, 0, vertices);
     glEnableVertexAttribArray(program.positionAttribute);
@@ -136,65 +161,96 @@ void DrawSpriteSheetSprite(ShaderProgram &program, int index, int spriteCountX,
     glDisableVertexAttribArray(program.texCoordAttribute);
 }
 
+SheetSprite playertexture;
+SheetSprite keytexture;
+
+float lerp(float v0, float v1, float t) {
+    return (1.0f - t) * v0 + t * v1;
+}
+
+void worldToTileCoordinates(float worldX, float worldY, int *gridX, int *gridY) {
+    *gridX = (int)(worldX / tileSize);
+    *gridY = (int)(worldY / -tileSize);
+}
+
 class Entity{
 public:
     Entity(){}
-    Entity(const string& Type,float ind, float pos_x, float pos_y,float v_x, float v_y){
+    Entity(const string& Type,SheetSprite& input_sprite, float pos_x, float pos_y,float v_x, float v_y,float scale){
         this->position = glm::vec2(pos_x,pos_y);
         this->velocity = glm::vec2(v_x,v_y);
         this->type = Type;
-        this->i = ind;
+//        this->i = ind;
+        this->sprite = input_sprite;
+        this->scale = scale;
         
     }
     void draw(ShaderProgram &p){
         glm::mat4 modelMatrix = glm::mat4(1.0f);
+
         modelMatrix = glm::translate(modelMatrix, glm::vec3(position.x, position.y, 1.0f));
         program.SetModelMatrix(modelMatrix);//move
-         DrawSpriteSheetSprite(p, i,sprite_count_x ,sprite_count_y);
-
-//        sprite.Draw(p);//draw entity using sprite.draw
-    };
+        sprite.Draw(p);
+    }
     void update(float elapsed) {
-//        position.x += velocity.x * elapsed;
-//        position.y += velocity.y * elapsed;
-//        if(type == "player"){
-//
-//        }
+//        velocity.x = lerp(velocity.x, 0.0f, elapsed * FRICTION_X);
+//        velocity.y = lerp(velocity.y, 0.0f, elapsed * FRICTION_Y);
+        position.x += velocity.x * elapsed;
+        position.y += velocity.y * elapsed - GRAVITY*elapsed;
     }
     bool collision_check(Entity &e){
-        return false;
+        if (position.x + 0.5f * size.x < e.position.x - 0.5f * e.size.x ||
+            position.x - 0.5f * size.x > e.position.x + 0.5f * e.size.x ||
+            position.y + 0.5f * size.y < e.position.y - 0.5f * e.size.y ||
+            position.y - 0.5f * size.y > e.position.y + 0.5f * e.size.y) {
+            return false;
+        }
+        else {
+            return true;
+        }
         
     }
     glm::vec2 position;
     glm::vec2 velocity;
     glm::vec2 size;
     int i;
+    SheetSprite sprite;
     string type;
+    float scale;
 //    SheetSprite sprite;
     float health;
 };
 
-
-
 struct GameState {
-    vector<Entity> enemies;
-    vector<Entity> bullets;
-    vector<Entity> entities;
-    int score;
+    Entity key;
+    Entity player;
 };
-
+GameState state;
 struct worldMapEntity {
     string type;
     float x;
     float y;
 };
 
+void placeEntity(string& type, float position_x, float position_y, SheetSprite& mySprite) {
+//    cout<<"placeEntity():";
+//    cout << type << position_x << position_y << "\n";
+    if (type == "player") {
+        cout <<"player!!";
+        state.player = Entity(type,mySprite,position_x,position_y,0.0f, 0.0f, 0.0f);
+    }
+    else if (type == "key") {
+        state.key = Entity(type,mySprite,position_x, position_y, 0.0f, 0.0f, 0.0f);
+    }
+}
+
+
 class worldMap {
 public:
     worldMap();
     void Load(const string fileName);
-    void placeEntity(string type, int placeX, int placeY);
-    
+//    void placeEntity(string type, int placeX, int placeY);
+
     int mapWidth;
     int mapHeight;
     unsigned int **mapData;
@@ -204,6 +260,7 @@ private:
     bool ReadHeader(ifstream &stream);
     bool ReadLayerData(ifstream &stream);
     bool ReadEntityData(ifstream &stream);
+
     
 };
 
@@ -213,7 +270,7 @@ worldMap:: worldMap() {
     mapHeight = -1;
 }
 worldMap map;
-bool worldMap::ReadHeader( ifstream &stream) {
+bool worldMap::ReadHeader(ifstream &stream) {
     string line;
     mapWidth = -1;
     mapHeight = -1;
@@ -240,7 +297,7 @@ bool worldMap::ReadHeader( ifstream &stream) {
     }
 }
 
-bool  worldMap::ReadLayerData(ifstream &stream) {
+bool worldMap::ReadLayerData(ifstream &stream) {
     string line;
     while(getline(stream, line)) {
         if(line == "") { break; }
@@ -284,15 +341,26 @@ bool worldMap::ReadEntityData(ifstream &stream) {
             string xPosition, yPosition;
             getline(lineStream, xPosition, ',');
             getline(lineStream, yPosition, ',');
-            float placeX = atoi(xPosition.c_str())*tileSize;
-            float placeY = atoi(yPosition.c_str())*-tileSize;
-            placeEntity(type, placeX, placeY);
+            float placeX = (atoi(xPosition.c_str())*tileSize);
+            float placeY = (atoi(yPosition.c_str())*-tileSize);
+            
+            cout << type;
+//              placeEntity(string& type, float position_x, float position_y,SheetSprite& mySprite)
+            if(type == "player"){
+                cout << type << placeX << placeY << "\n";
+                placeEntity(type, placeX, placeY,playertexture);
+            }else if(type == "key"){
+                cout << type << placeX << placeY << "\n";
+                placeEntity(type, placeX, placeY,keytexture);
+            }
+            
+
         }
     }
     return true;
 }
 
-void worldMap::Load(const  string fileName) {
+void worldMap::Load(const string fileName) {
     ifstream infile(fileName);
     if(infile.fail()) {
         assert(false); // unable to open file
@@ -305,47 +373,20 @@ void worldMap::Load(const  string fileName) {
             }
         } else if(line == "[layer]") {
             ReadLayerData(infile);
-        } else if(line == "[ObjectsLayer]") {
+        } else if(line == "[Entities]" and initial == true) {
             ReadEntityData(infile);
+            ReadEntityData(infile);
+            cout << initial;
+            initial = false;
+            //only read form the txt file in the begining of the game
         }
     }
 }
 
-void worldMap::placeEntity(string type, int placeX, int placeY){
-//    Entity(const string& Type, SheetSprite& input_sprite, float x, float y, float v_x, float v_y, float size_x, float size_y)
-    int x = 0;
-    int y = 0;
-    if(type == "player"){
-        x = 1;
-        y = 6;
-        
-    }else if(type == "enemy"){
-        x = 13;
-        y = 2;
-    }
-//    float u = (float)(((int)map.mapData[y][x]) % sprite_count_x) / (float) sprite_count_x;
-//    float v = (float)(((int)map.mapData[y][x]) / sprite_count_x) / (float) sprite_count_y;
-//    float spriteWidth = 1.0f/(float)sprite_count_x;
-//    float spriteHeight = 1.0f/(float)sprite_count_y;
-//    vertexData.insert(vertexData.end(), {
-//        tileSize * x, -tileSize * y,
-//        tileSize * x, (-tileSize * y)-tileSize,
-//        (tileSize * x)+tileSize, (-tileSize * y)-tileSize,
-//        tileSize * x, -tileSize * y,
-//        (tileSize * x)+tileSize, (-tileSize * y)-tileSize,
-//        (tileSize * x)+tileSize, -tileSize * y
-//    });
-//    texCoordData.insert(texCoordData.end(), {
-//        u, v,
-//        u, v+(spriteHeight),
-//        u+spriteWidth, v+(spriteHeight),
-//        u, v,
-//        u+spriteWidth, v+(spriteHeight),
-//        u+spriteWidth, v
-//    });
-}
+
 
 void drawMap(){
+//    cout << map.mapData;
     for(int y=0; y < map.mapHeight; y++) {
         for(int x=0; x < map.mapWidth; x++) {
             
@@ -393,7 +434,7 @@ void drawMap(){
 
 void setUp(){
     SDL_Init(SDL_INIT_VIDEO);
-    displayWindow = SDL_CreateWindow("Welcome to platformer :)", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 960, 590, SDL_WINDOW_OPENGL);
+    displayWindow = SDL_CreateWindow("Welcome to platformer >w<", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 960, 590, SDL_WINDOW_OPENGL);
     SDL_GLContext context = SDL_GL_CreateContext(displayWindow);
     SDL_GL_MakeCurrent(displayWindow, context);
 #ifdef _WINDOWS
@@ -410,17 +451,16 @@ void setUp(){
     
     fontTexture = LoadTexture(RESOURCE_FOLDER"pixel_font.png");
     spriteTexture = LoadTexture(RESOURCE_FOLDER"sprites.png");
-    map.Load(RESOURCE_FOLDER"map2.txt");
+    playertexture = SheetSprite(spriteTexture,80,tileSize);
+    keytexture = SheetSprite(spriteTexture,83,tileSize);
+    map.Load(RESOURCE_FOLDER"map3.txt");
     glUseProgram(program.programID);
     program.SetColor(1.0f, 0.5f, 0.0f,1.0f);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glClearColor(1.0f, 0.5f, 0.0f, 1.0f);
+    glClearColor(0.2f, 0.5f, 0.7f, 1.0f);
     
 }
-
-
-GameState state;
 
 void processEvents() {
     switch (mode) {
@@ -460,14 +500,14 @@ void update(float elapsed) {
         case STATE_MAIN_MENU:
             break;
         case STATE_GAME_LEVEL:
-//            if(keys[SDL_SCANCODE_LEFT] ){
-//                state.entities[0].velocity.x = -1.5f;
-//            }else if(keys[SDL_SCANCODE_RIGHT]){
-//                state.entities[0].velocity.x = 1.5f;
-//            }else{
-//                state.entities[0].velocity.x = 0.0f;
-//            }
-//            state.entities[0].update(elapsed);
+            if(keys[SDL_SCANCODE_LEFT] ){
+                state.player.velocity.x = -1.5f;
+            }else if(keys[SDL_SCANCODE_RIGHT]){
+                state.player.velocity.x = 1.5f;
+            }else{
+                state.player.velocity.x = 0.0f;
+            }
+            state.player.update(elapsed);
             break;
         case STATE_GAME_OVER:
             break;
@@ -476,33 +516,39 @@ void update(float elapsed) {
 
 void render() {
     glClear(GL_COLOR_BUFFER_BIT);
-    //center
-//    glm::mat4 viewMatrix = glm::mat4(1.0f);
-//    viewMatrix = glm::translate(viewMatrix, glm::vec3());
-//    program.SetViewMatrix(glm::mat4(1.0f));
+    
     switch (mode) {
-        case STATE_MAIN_MENU:
+        case STATE_MAIN_MENU:{
             DrawText(program, fontTexture, "Welcome to platformer demo QwQ", -1.1f,0.0f,0.07f, 0.01f);
             DrawText(program, fontTexture, "HINT: Press left/Right/Up/Down to move", -1.4f,-0.2f, 0.05f, 0.01f);
             DrawText(program, fontTexture, "Press Enter To Start", -1.1f,-0.4f, 0.05f, 0.01f);
             break;
-        case STATE_GAME_LEVEL:
+        }
+        case STATE_GAME_LEVEL:{
             drawMap();
-//            for(Entity &e: state.entities){
-//                e.draw(program);
+            state.player.draw(program);
+            state.key.draw(program);
+            //re-center
+            glm::mat4 viewMatrix = glm::mat4(1.0f);
+            viewMatrix = glm::translate(viewMatrix, glm::vec3(-state.player.position.x, -state.player.position.y, 1.0f));
+            program.SetViewMatrix(viewMatrix);
+
+//            DrawSpriteSheetSprite(program, 28, sprite_count_x, sprite_count_y,0.3f);
+//            if(initial == true){
+//                initial = false;
+//            }else{
+//                state.player.draw(program);
+//                state.enemy.draw(program);
 //            }
-//            for(Entity &e: state.enemies){
-//                e.draw(program);
-//            }
-//            for(Entity &e: state.bullets){
-//                e.draw(program);
-//            }
+//            map.ReadEntityData();
             break;
-        case STATE_GAME_OVER:
+        }
+        case STATE_GAME_OVER:{
 //            if(state.score == 7){
 //                DrawText(program, fontTexture, "Awwwww! You did it >w<", -1.12f,0.0f,0.05f, 0.01f);
 //            }
             break;
+        }
     }
 }
 
