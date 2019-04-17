@@ -21,7 +21,7 @@
 
 #define FRICTION_X 0.2f
 #define FRICTION_Y 0.5f
-#define GRAVITY 0.5f
+#define GRAVITY 1.0f
 #define FIXED_TIMESTEP 0.0166666f
 #define MAX_TIMESTEPS 6
 using namespace std;
@@ -43,6 +43,10 @@ float elapsed = 0.0f;
 float lastFrameTicks = 0.0f;
 bool done = false;
 bool initial = true;
+bool playerCollideBottom();
+bool playerCollideTop();
+bool playerCollideLeft();
+bool playerCollideRight();
 vector<int> solidInd = {12,33,7,17,34,19,35,18};
 
 SDL_Window* displayWindow;
@@ -179,11 +183,10 @@ public:
         this->velocity = glm::vec2(v_x,v_y);
         this->type = Type;
         this->sprite = input_sprite;
-        this->collidedBottom = false;
-        this->collidedTop = false;
-        this->collidedLeft = false;
-        this->collidedRight = false;
+        this->jump = false;
         this->size = glm::vec2(tileSize * scale,tileSize * scale);
+        this->acceleration = glm::vec2(0.0f,0.0f);
+        this->collidedBot = false;
     }
     void draw(ShaderProgram &p){
         glm::mat4 modelMatrix = glm::mat4(1.0f);
@@ -193,11 +196,22 @@ public:
         sprite.Draw(p);
     }
     void update(float elapsed) {
+//        velocity.x = lerp(velocity.x, 0.0f, elapsed * FRICTION_X);
+//        velocity.y = lerp(velocity.y, 0.0f, elapsed * FRICTION_Y);
+//        position.x += velocity.x * elapsed;
+//        position.y += velocity.y * elapsed;
+//        position.y += - GRAVITY*elapsed;
+//
         velocity.x = lerp(velocity.x, 0.0f, elapsed * FRICTION_X);
         velocity.y = lerp(velocity.y, 0.0f, elapsed * FRICTION_Y);
-        position.x += velocity.x * elapsed;
-        position.y += velocity.y * elapsed;
-        position.y += - GRAVITY*elapsed;
+        velocity.x += acceleration.x * elapsed;
+        velocity.y += (acceleration.y - GRAVITY) * elapsed;
+        position.y += elapsed * velocity.y;
+        playerCollideBottom();
+        playerCollideTop();
+        position.x += elapsed * velocity.x;
+        playerCollideRight();
+        playerCollideLeft();
     }
     bool collision_check(Entity &e){
         if (position.x + 0.5f * size.x < e.position.x - 0.5f * e.size.x ||
@@ -213,16 +227,15 @@ public:
     }
     glm::vec2 position;
     glm::vec2 velocity;
+    glm::vec2 acceleration;
     glm::vec2 size;
     int i;
     SheetSprite sprite;
     string type;
     float scale;
     float health;
-    bool collidedBottom;
-    bool collidedTop;
-    bool collidedLeft;
-    bool collidedRight;
+    bool jump;
+    bool collidedBot;
 };
 
 struct GameState {
@@ -398,18 +411,18 @@ bool playerCollideBottom(){
     
     
     if(gridX < map.mapWidth && abs(gridY) < map.mapHeight){
-//        int thisvar = map.mapData[gridY][gridX];
         if(map.mapData[gridY][gridX] != 0 && map.mapData[gridY][gridX]<90){
-        state.player.collidedBottom = true;
-        state.player.position.y += fabs((-tileSize * gridY) -(state.player.position.y - state.player.size.y*0.5f))+0.001f;
-//       cout << "gridX: " << gridX << " /gridY: " << gridY << " /world x: "<< state.player.position.x << " /world y: "<< state.player.position.y << " /Tile:" << thisvar <<endl;
-//        cout << (fabs((-tileSize * gridY) -(state.player.position.y - state.player.size.y*0.5f))+0.01f);
-//        cout << " Bottom == ture" <<endl;
-        return true;
+            state.player.position.y += fabs((-tileSize * gridY) -(state.player.position.y - state.player.size.y*0.5f))+0.001f;
+            state.player.collidedBot = true;
+            if(!state.player.jump){
+                state.player.velocity.y = 0.0f;
+            }else{
+                state.player.jump = false;
+            }
+            return true;
             
         }
     }
-    state.player.collidedBottom = false;
     return false;
 }
 bool playerCollideTop(){
@@ -418,37 +431,28 @@ bool playerCollideTop(){
     
     
      if(gridX < map.mapWidth && abs(gridY) < map.mapHeight){
-//         int thisvar = map.mapData[gridY][gridX];
-         
          if(map.mapData[gridY][gridX] != 0 && map.mapData[gridY][gridX]<90){
-            state.player.collidedBottom = true;
             state.player.position.y -= fabs(((-tileSize * gridY) -tileSize) - (state.player.position.y + state.player.size.y*0.5f))+0.001f;
-//             cout << "gridX: " << gridX << " /gridY: " << gridY << " /world x: "<< state.player.position.x << " /world y: "<< state.player.position.y << " /Tile:" << thisvar <<endl;
-//             cout << (fabs(((-tileSize * gridY) -tileSize) - (state.player.position.y + state.player.size.y*0.5f))+0.01f);
-             cout << " Top == ture" <<endl;
+            cout << " Top == ture" <<endl;
+            state.player.velocity.y = 0.0f;
             return true;
             
         }
      }
-    state.player.collidedBottom = false;
     return false;
 }
 bool playerCollideLeft(){
     int gridX, gridY;
     worldToTileCoordinates(state.player.position.x-0.5f*state.player.size.x,state.player.position.y,&gridX,&gridY);
     if(gridX < map.mapWidth && abs(gridY) < map.mapHeight){
-//        int thisvar = map.mapData[gridY][gridX];
         if(map.mapData[gridY][gridX] != 0 && map.mapData[gridY][gridX]<90){
-            state.player.collidedLeft = true;
-            state.player.position.x += fabs(((tileSize * gridX) + tileSize) - (state.player.position.x - state.player.size.x*0.5f))+0.002f;
-//            cout << "gridX: " << gridX << " /gridY: " << gridY << " /world x: "<< state.player.position.x << " /world y: "<< state.player.position.y << " /Tile:" << thisvar <<endl;
-//            cout << (fabs(((tileSize * gridX) - tileSize) - (state.player.position.x - state.player.size.x*0.5f))+.1f);
-            cout << " Left == ture" <<endl;
+            state.player.position.x += fabs(((tileSize * gridX) + tileSize) - (state.player.position.x - state.player.size.x*0.5f))+0.00001f;
+        cout << " Left == ture" <<endl;
+        state.player.velocity.x = 0.0f;
         return true;
      
         }
     }
-    state.player.collidedBottom = false;
     return false;
 }
 bool playerCollideRight(){
@@ -460,21 +464,19 @@ bool playerCollideRight(){
 //        int thisvar = map.mapData[gridY][gridX];
 //        cout << "gridX: " << gridX << " /gridY: " << gridY << " /world x: "<< state.player.position.x << " /world y: "<< state.player.position.y << " /Tile:" << thisvar <<endl;
         if(map.mapData[gridY][gridX] != 0 && map.mapData[gridY][gridX]<90){
-            state.player.collidedRight = true;
-            state.player.position.x -= fabs(((tileSize * gridX)) - (state.player.position.x + state.player.size.x*0.5f))+0.001f;
+            state.player.position.x -= fabs((tileSize * gridX) - (state.player.position.x + state.player.size.x / 2.0f))+0.000001f;
 //            cout << state.player.position.x << endl;
 //            cout << (fabs(((tileSize * gridX) + tileSize) - (state.player.position.x + state.player.size.x*0.5f))+.0001f);
-             cout << " Right!!!!!!!!! == ture" <<endl;
+             cout << " Right == ture" <<endl;
+            state.player.velocity.x = 0.0f;
             return true;
         }
     }
-    state.player.collidedBottom = false;
     return false;
 }
 
 
 void drawMap(){
-//    cout << map.mapData;
     vector<float> vertexData;
     vector<float> texCoordData;
     for(int y=0; y < map.mapHeight; y++) {
@@ -571,10 +573,14 @@ void processEvents() {
                 if (event.type == SDL_QUIT || event.type == SDL_WINDOWEVENT_CLOSE) {
                     done = true;
                 }else if(event.type == SDL_KEYDOWN){
-                    if(event.key.keysym.scancode == SDL_SCANCODE_SPACE && playerCollideBottom()) {
+//                    cout << "hummm I wonder why ";
+//                    cout << playerCollideBottom() << " ";
+//                    cout << state.player.collidedBot << endl;
+                    if(event.key.keysym.scancode == SDL_SCANCODE_SPACE && state.player.collidedBot) {
                         state.player.velocity.y = 1.3f;
-                        cout << "jump" << endl;
-                        state.player.collidedBottom = false;
+                        state.player.jump = true;
+                        state.player.collidedBot = false;
+                        cout << "jump!!!!!!!" << endl;
                     }
                     if(win == true || lose == true){
                         mode = STATE_GAME_OVER;
@@ -600,19 +606,13 @@ void update(float elapsed) {
         case STATE_MAIN_MENU:
             break;
         case STATE_GAME_LEVEL:{
-            if(keys[SDL_SCANCODE_LEFT] ){
-                state.player.velocity.x = -1.5f;
-            }else if(keys[SDL_SCANCODE_RIGHT]){
-                state.player.velocity.x = 1.5f;
+            if(keys[SDL_SCANCODE_LEFT] && !playerCollideLeft()){
+                state.player.acceleration.x = -1.5f;
+            }else if(keys[SDL_SCANCODE_RIGHT] && !playerCollideRight()){
+                state.player.acceleration.x = 1.5f;
             }else{
                 state.player.velocity.x = 0.0f;
             }
-            if(playerCollideLeft() || playerCollideRight()){
-                 state.player.velocity.x = 0.0f;
-             }
-            if(playerCollideTop() || playerCollideBottom()){
-                 state.player.velocity.y = 0.0f;
-             }
             if(state.player.collision_check(state.key)){
                 state.key.position.x = -1000000;
                 win = true;
@@ -625,11 +625,10 @@ void update(float elapsed) {
                 cout << "lose\n";
                 mode = STATE_GAME_OVER;
             }
-
             if(!win && !lose){
                 state.player.update(elapsed);
+                state.player.acceleration.x = 0.0f;
             }
-            
             break;
         }case STATE_GAME_OVER:
             break;
@@ -664,7 +663,6 @@ void render() {
             if(win == true){
                 DrawText(program, fontTexture, "Awwwww! You got the key >w<", -1.12f,0.0f,0.05f, 0.01f);
             }else{
-                
                 DrawText(program, fontTexture, "BOOM!!YOU DIED huh",-1.12f,-0.0f, 0.05f, 0.01f);
                 DrawText(program, fontTexture, "GAME OVER T^T",-1.12f,-0.4f, 0.05f, 0.01f);
             }

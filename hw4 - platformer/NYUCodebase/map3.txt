@@ -28,7 +28,7 @@ data=
 [Entities]
 # player
 type=player
-location=5,2,1,1
+location=6,2,1,1
 
 [Entities]
 # key
