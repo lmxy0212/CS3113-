@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.2" tiledversion="1.2.3" orientation="orthogonal" renderorder="right-down" width="9" height="12" tilewidth="16" tileheight="16" infinite="0" nextlayerid="4" nextobjectid="19">
+<map version="1.2" tiledversion="1.2.3" orientation="orthogonal" renderorder="right-down" width="9" height="12" tilewidth="16" tileheight="16" infinite="0" nextlayerid="4" nextobjectid="21">
  <tileset firstgid="1" source="MySprites.tsx"/>
  <layer id="1" name="Tile Layer 1" width="9" height="12">
   <data encoding="base64">
@@ -8,6 +8,7 @@
  </layer>
  <objectgroup id="2" name="Entities">
   <object id="17" name="player" type="player" gid="81" x="92.4547" y="35.8453" width="16" height="16"/>
-  <object id="18" name="key" type="key" gid="87" x="56.5025" y="67.2154" width="16" height="16"/>
+  <object id="18" name="key" type="key" gid="87" x="74.4786" y="165.908" width="16" height="16"/>
+  <object id="20" name="bomb" type="bomb" gid="64" x="79.7657" y="127.488" width="16" height="16"/>
  </objectgroup>
 </map>

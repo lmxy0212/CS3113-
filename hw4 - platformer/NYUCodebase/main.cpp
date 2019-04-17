@@ -26,7 +26,6 @@
 #define GRAVITY 0.5f
 #define FIXED_TIMESTEP 0.0166666f
 #define MAX_TIMESTEPS 6
-
 using namespace std;
 //globals
 ShaderProgram program;
@@ -49,7 +48,8 @@ bool initial = true;
 vector<int> solidInd = {12,33,7,17,34,19,35,18};
 
 SDL_Window* displayWindow;
-
+bool win = false;
+bool lose = false;
 GLuint LoadTexture(const char* filePath) {
     int w, h, comp;
     unsigned char* image = stbi_load(filePath, &w, &h, &comp, STBI_rgb_alpha);
@@ -164,6 +164,7 @@ void SheetSprite::Draw(ShaderProgram &program) {
 
 SheetSprite playertexture;
 SheetSprite keytexture;
+SheetSprite bombtexture;
 
 float lerp(float v0, float v1, float t) {
     return (1.0f - t) * v0 + t * v1;
@@ -234,6 +235,7 @@ public:
 struct GameState {
     Entity key;
     Entity player;
+    Entity bomb;
 };
 GameState state;
 struct worldMapEntity {
@@ -251,6 +253,9 @@ void placeEntity(string& type, float position_x, float position_y, SheetSprite& 
     }
     else if (type == "key") {
         state.key = Entity(type,mySprite,position_x, position_y, 0.0f, 0.0f, 1.0f);
+    }else if(type == "bomb"){
+        cout << "hi bomb";
+        state.bomb = Entity(type,mySprite,position_x,position_y,0.0f, 0.0f, 1.0f);
     }
 }
 
@@ -362,6 +367,9 @@ bool worldMap::ReadEntityData(ifstream &stream) {
             }else if(type == "key"){
                 cout << type << placeX << placeY << "\n";
                 placeEntity(type, placeX, placeY,keytexture);
+            }else if(type == "bomb"){
+                cout << type << placeX << placeY << "\n";
+                placeEntity(type, placeX, placeY,bombtexture);
             }
             
 
@@ -384,6 +392,7 @@ void worldMap::Load(const string fileName) {
         } else if(line == "[layer]") {
             ReadLayerData(infile);
         } else if(line == "[Entities]" and initial == true) {
+            ReadEntityData(infile);
             ReadEntityData(infile);
             ReadEntityData(infile);
             cout << initial;
@@ -456,14 +465,14 @@ bool playerCollideRight(){
     int gridX, gridY;
     //   int gridX, gridY;
     worldToTileCoordinates(state.player.position.x+0.5f*state.player.size.x,state.player.position.y,&gridX,&gridY);
-    cout << state.player.position.x;
+//    cout << state.player.position.x;
     if(gridX < map.mapWidth && abs(gridY) < map.mapHeight){
 //        int thisvar = map.mapData[gridY][gridX];
 //        cout << "gridX: " << gridX << " /gridY: " << gridY << " /world x: "<< state.player.position.x << " /world y: "<< state.player.position.y << " /Tile:" << thisvar <<endl;
         if(map.mapData[gridY][gridX] != 0 && map.mapData[gridY][gridX]<90){
             state.player.collidedRight = true;
             state.player.position.x -= fabs(((tileSize * gridX)) - (state.player.position.x + state.player.size.x*0.5f))+0.001f;
-            cout << state.player.position.x << endl;
+//            cout << state.player.position.x << endl;
 //            cout << (fabs(((tileSize * gridX) + tileSize) - (state.player.position.x + state.player.size.x*0.5f))+.0001f);
              cout << " Right!!!!!!!!! == ture" <<endl;
             return true;
@@ -544,6 +553,7 @@ void setUp(){
     spriteTexture = LoadTexture(RESOURCE_FOLDER"sprites.png");
     playertexture = SheetSprite(spriteTexture,80,tileSize*scale);//draw player w/ size half of the tilesize
     keytexture = SheetSprite(spriteTexture,83,tileSize);
+    bombtexture = SheetSprite(spriteTexture,70,tileSize);
     map.Load(RESOURCE_FOLDER"map3.txt");
     glUseProgram(program.programID);
     program.SetColor(1.0f, 0.5f, 0.0f,1.0f);
@@ -576,8 +586,9 @@ void processEvents() {
                         state.player.velocity.y = 1.3f;
                         cout << "jump" << endl;
                         state.player.collidedBottom = false;
-                    }else{
-//                        state.player.velocity.y = 0.0f;
+                    }
+                    if(win == true || lose == true){
+                        mode = STATE_GAME_OVER;
                     }
                 }
                 break;
@@ -615,10 +626,21 @@ void update(float elapsed) {
              }
             if(state.player.collision_check(state.key)){
                 state.key.position.x = -1000000;
+                win = true;
+                cout << "win\n";
+                mode = STATE_GAME_OVER;
+            }
+            if(state.player.collision_check(state.bomb)){
+                state.player.position.x = -1000000;
+                lose = true;
+                cout << "lose\n";
+                mode = STATE_GAME_OVER;
             }
 
+            if(!win && !lose){
+                state.player.update(elapsed);
+            }
             
-            state.player.update(elapsed);
             break;
         }case STATE_GAME_OVER:
             break;
@@ -639,6 +661,7 @@ void render() {
             drawMap();
             state.player.draw(program);
             state.key.draw(program);
+            state.bomb.draw(program);
             //re-center
             glm::mat4 viewMatrix = glm::mat4(1.0f);
             viewMatrix = glm::translate(viewMatrix, glm::vec3(-state.player.position.x, -state.player.position.y, 0.0f));
@@ -655,9 +678,15 @@ void render() {
             break;
         }
         case STATE_GAME_OVER:{
-//            if(state.score == 7){
-//                DrawText(program, fontTexture, "Awwwww! You did it >w<", -1.12f,0.0f,0.05f, 0.01f);
-//            }
+            glm::mat4 viewMatrix = glm::mat4(1.0f);
+            program.SetViewMatrix(viewMatrix);
+            if(win == true){
+                DrawText(program, fontTexture, "Awwwww! You got the key >w<", -1.12f,0.0f,0.05f, 0.01f);
+            }else{
+                
+                DrawText(program, fontTexture, "BOOM!!YOU DIED huh",-1.12f,-0.0f, 0.05f, 0.01f);
+                DrawText(program, fontTexture, "GAME OVER T^T",-1.12f,-0.4f, 0.05f, 0.01f);
+            }
             break;
         }
     }
