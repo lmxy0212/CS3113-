@@ -20,10 +20,8 @@
 		6DEF23C11B96CC2600BCE792 /* fragment.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 6DEF23BB1B96CC2600BCE792 /* fragment.glsl */; };
 		6DEF23C31B96CC2600BCE792 /* ShaderProgram.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6DEF23BE1B96CC2600BCE792 /* ShaderProgram.cpp */; };
 		6DEF23C41B96CC2600BCE792 /* vertex.glsl in Resources */ = {isa = PBXBuildFile; fileRef = 6DEF23C01B96CC2600BCE792 /* vertex.glsl */; };
-		B50C39572263D64400674A4B /* todoroki.png in Resources */ = {isa = PBXBuildFile; fileRef = B50C39562263D64400674A4B /* todoroki.png */; };
 		B50C39592263F1AB00674A4B /* map3.txt in Resources */ = {isa = PBXBuildFile; fileRef = B50C39582263F1AB00674A4B /* map3.txt */; };
 		B527BA4222603FAB0041A27D /* sprites.png in Resources */ = {isa = PBXBuildFile; fileRef = B527BA4022603FAB0041A27D /* sprites.png */; };
-		B527BA4322603FAB0041A27D /* bakugou.png in Resources */ = {isa = PBXBuildFile; fileRef = B527BA4122603FAB0041A27D /* bakugou.png */; };
 		B527BA4622606D940041A27D /* worldMap.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B527BA4422606D940041A27D /* worldMap.cpp */; };
 		B527BA482260D2320041A27D /* pixel_font.png in Resources */ = {isa = PBXBuildFile; fileRef = B527BA472260D2320041A27D /* pixel_font.png */; };
 		B527BA4A2260D39A0041A27D /* map2.txt in Resources */ = {isa = PBXBuildFile; fileRef = B527BA492260D39A0041A27D /* map2.txt */; };
@@ -49,10 +47,8 @@
 		6DEF23BE1B96CC2600BCE792 /* ShaderProgram.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ShaderProgram.cpp; sourceTree = "<group>"; };
 		6DEF23BF1B96CC2600BCE792 /* ShaderProgram.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ShaderProgram.h; sourceTree = "<group>"; };
 		6DEF23C01B96CC2600BCE792 /* vertex.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = vertex.glsl; sourceTree = "<group>"; };
-		B50C39562263D64400674A4B /* todoroki.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = todoroki.png; sourceTree = "<group>"; };
 		B50C39582263F1AB00674A4B /* map3.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = map3.txt; sourceTree = "<group>"; };
 		B527BA4022603FAB0041A27D /* sprites.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = sprites.png; sourceTree = "<group>"; };
-		B527BA4122603FAB0041A27D /* bakugou.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = bakugou.png; sourceTree = "<group>"; };
 		B527BA4422606D940041A27D /* worldMap.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = worldMap.cpp; sourceTree = "<group>"; };
 		B527BA4522606D940041A27D /* worldMap.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = worldMap.hpp; sourceTree = "<group>"; };
 		B527BA472260D2320041A27D /* pixel_font.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = pixel_font.png; sourceTree = "<group>"; };
@@ -136,8 +132,6 @@
 		6D5A86E119AE5CAA0066C1FD /* Code */ = {
 			isa = PBXGroup;
 			children = (
-				B527BA4122603FAB0041A27D /* bakugou.png */,
-				B50C39562263D64400674A4B /* todoroki.png */,
 				B527BA4022603FAB0041A27D /* sprites.png */,
 				B527BA472260D2320041A27D /* pixel_font.png */,
 				B527BA492260D39A0041A27D /* map2.txt */,
@@ -211,13 +205,11 @@
 			files = (
 				B527BA4A2260D39A0041A27D /* map2.txt in Resources */,
 				B527BA4222603FAB0041A27D /* sprites.png in Resources */,
-				B50C39572263D64400674A4B /* todoroki.png in Resources */,
 				6D5A86B819AE5C710066C1FD /* InfoPlist.strings in Resources */,
 				B50C39592263F1AB00674A4B /* map3.txt in Resources */,
 				6DEF23C11B96CC2600BCE792 /* fragment.glsl in Resources */,
 				6DE9D2F11BA6AB8C002D599C /* fragment_textured.glsl in Resources */,
 				6D5A86C619AE5C710066C1FD /* Images.xcassets in Resources */,
-				B527BA4322603FAB0041A27D /* bakugou.png in Resources */,
 				6D5A86BE19AE5C710066C1FD /* Credits.rtf in Resources */,
 				B527BA482260D2320041A27D /* pixel_font.png in Resources */,
 				6DEF23C41B96CC2600BCE792 /* vertex.glsl in Resources */,

@@ -22,8 +22,11 @@
 #endif
 
 #define FRICTION_X 0.2f
-#define FRICTION_Y 0.1f
-#define GRAVITY 2.0f
+#define FRICTION_Y 0.5f
+#define GRAVITY 0.5f
+#define FIXED_TIMESTEP 0.0166666f
+#define MAX_TIMESTEPS 6
+
 using namespace std;
 //globals
 ShaderProgram program;
@@ -33,19 +36,17 @@ GLuint fontTexture;
 SDL_Event event;
 enum GameMode {STATE_MAIN_MENU, STATE_GAME_LEVEL, STATE_GAME_OVER};
 GameMode mode = STATE_MAIN_MENU;
-vector<float> vertexData;
-vector<float> texCoordData;
-#define FIXED_TIMESTEP 0.0166666f
-#define MAX_TIMESTEPS 6
+
 float accumulator = 0.0f;
 int sprite_count_x = 16;
 int sprite_count_y = 8;
-float tileSize = .1;
-float scale = .1;
+float tileSize = 0.3f;
+float scale = 0.6f;
 float elapsed = 0.0f;
 float lastFrameTicks = 0.0f;
 bool done = false;
 bool initial = true;
+vector<int> solidInd = {12,33,7,17,34,19,35,18};
 
 SDL_Window* displayWindow;
 
@@ -72,8 +73,8 @@ GLuint LoadTexture(const char* filePath) {
 
 void DrawText(ShaderProgram &program, int fontTexture, string text, float x, float y, float size, float spacing) {
     float texture_size = 1.0 / 16.0f;
-    std::vector<float> vertexData;
-    std::vector<float> texCoordData;
+    vector<float> vertexData;
+    vector<float> texCoordData;
     glm::mat4 textModelMatrix = glm::mat4(1.0f);
     textModelMatrix = glm::translate(textModelMatrix, glm::vec3(x, y, 1.0f));
     for (size_t i = 0; i < text.size(); i++) {
@@ -134,7 +135,6 @@ public:
     float index;
     float spriteWidth;
     float spriteHeight;
-    glm::vec2 trueSize;
 };
 
 void SheetSprite::Draw(ShaderProgram &program) {
@@ -156,6 +156,7 @@ void SheetSprite::Draw(ShaderProgram &program) {
     glEnableVertexAttribArray(program.positionAttribute);
     glVertexAttribPointer(program.texCoordAttribute, 2, GL_FLOAT, false, 0, texCoords);
     glEnableVertexAttribArray(program.texCoordAttribute);
+    glBindTexture(GL_TEXTURE_2D, textureID);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glDisableVertexAttribArray(program.positionAttribute);
     glDisableVertexAttribArray(program.texCoordAttribute);
@@ -182,8 +183,11 @@ public:
         this->type = Type;
 //        this->i = ind;
         this->sprite = input_sprite;
-        this->scale = scale;
-        
+        this->collidedBottom = false;
+        this->collidedTop = false;
+        this->collidedLeft = false;
+        this->collidedRight = false;
+        this->size = glm::vec2(tileSize * scale,tileSize * scale);
     }
     void draw(ShaderProgram &p){
         glm::mat4 modelMatrix = glm::mat4(1.0f);
@@ -193,10 +197,11 @@ public:
         sprite.Draw(p);
     }
     void update(float elapsed) {
-//        velocity.x = lerp(velocity.x, 0.0f, elapsed * FRICTION_X);
-//        velocity.y = lerp(velocity.y, 0.0f, elapsed * FRICTION_Y);
+        velocity.x = lerp(velocity.x, 0.0f, elapsed * FRICTION_X);
+        velocity.y = lerp(velocity.y, 0.0f, elapsed * FRICTION_Y);
         position.x += velocity.x * elapsed;
-        position.y += velocity.y * elapsed - GRAVITY*elapsed;
+        position.y += velocity.y * elapsed;
+        position.y += - GRAVITY*elapsed;
     }
     bool collision_check(Entity &e){
         if (position.x + 0.5f * size.x < e.position.x - 0.5f * e.size.x ||
@@ -213,12 +218,17 @@ public:
     glm::vec2 position;
     glm::vec2 velocity;
     glm::vec2 size;
+//    float size;
     int i;
     SheetSprite sprite;
     string type;
     float scale;
 //    SheetSprite sprite;
     float health;
+    bool collidedBottom;
+    bool collidedTop;
+    bool collidedLeft;
+    bool collidedRight;
 };
 
 struct GameState {
@@ -237,10 +247,10 @@ void placeEntity(string& type, float position_x, float position_y, SheetSprite& 
 //    cout << type << position_x << position_y << "\n";
     if (type == "player") {
         cout <<"player!!";
-        state.player = Entity(type,mySprite,position_x,position_y,0.0f, 0.0f, 0.0f);
+        state.player = Entity(type,mySprite,position_x,position_y,0.0f, 0.0f, scale);
     }
     else if (type == "key") {
-        state.key = Entity(type,mySprite,position_x, position_y, 0.0f, 0.0f, 0.0f);
+        state.key = Entity(type,mySprite,position_x, position_y, 0.0f, 0.0f, 1.0f);
     }
 }
 
@@ -383,10 +393,91 @@ void worldMap::Load(const string fileName) {
     }
 }
 
+bool playerCollideBottom(){
+    int gridX, gridY;
+    worldToTileCoordinates(state.player.position.x,state.player.position.y-0.5f* state.player.size.y,&gridX,&gridY);
+    
+    
+    if(gridX < map.mapWidth && abs(gridY) < map.mapHeight){
+//        int thisvar = map.mapData[gridY][gridX];
+        if(map.mapData[gridY][gridX] != 0 && map.mapData[gridY][gridX]<90){
+        state.player.collidedBottom = true;
+        state.player.position.y += fabs((-tileSize * gridY) -(state.player.position.y - state.player.size.y*0.5f))+0.001f;
+//       cout << "gridX: " << gridX << " /gridY: " << gridY << " /world x: "<< state.player.position.x << " /world y: "<< state.player.position.y << " /Tile:" << thisvar <<endl;
+//        cout << (fabs((-tileSize * gridY) -(state.player.position.y - state.player.size.y*0.5f))+0.01f);
+//        cout << " Bottom == ture" <<endl;
+        return true;
+            
+        }
+    }
+    state.player.collidedBottom = false;
+    return false;
+}
+bool playerCollideTop(){
+    int gridX, gridY;
+    worldToTileCoordinates(state.player.position.x,state.player.position.y+0.5f*state.player.size.y,&gridX,&gridY);
+    
+    
+     if(gridX < map.mapWidth && abs(gridY) < map.mapHeight){
+//         int thisvar = map.mapData[gridY][gridX];
+         
+         if(map.mapData[gridY][gridX] != 0 && map.mapData[gridY][gridX]<90){
+            state.player.collidedBottom = true;
+            state.player.position.y -= fabs(((-tileSize * gridY) -tileSize) - (state.player.position.y + state.player.size.y*0.5f))+0.001f;
+//             cout << "gridX: " << gridX << " /gridY: " << gridY << " /world x: "<< state.player.position.x << " /world y: "<< state.player.position.y << " /Tile:" << thisvar <<endl;
+//             cout << (fabs(((-tileSize * gridY) -tileSize) - (state.player.position.y + state.player.size.y*0.5f))+0.01f);
+             cout << " Top == ture" <<endl;
+            return true;
+            
+        }
+     }
+    state.player.collidedBottom = false;
+    return false;
+}
+bool playerCollideLeft(){
+    int gridX, gridY;
+    worldToTileCoordinates(state.player.position.x-0.5f*state.player.size.x,state.player.position.y,&gridX,&gridY);
+    if(gridX < map.mapWidth && abs(gridY) < map.mapHeight){
+//        int thisvar = map.mapData[gridY][gridX];
+        if(map.mapData[gridY][gridX] != 0 && map.mapData[gridY][gridX]<90){
+            state.player.collidedLeft = true;
+            state.player.position.x += fabs(((tileSize * gridX) + tileSize) - (state.player.position.x - state.player.size.x*0.5f))+0.002f;
+//            cout << "gridX: " << gridX << " /gridY: " << gridY << " /world x: "<< state.player.position.x << " /world y: "<< state.player.position.y << " /Tile:" << thisvar <<endl;
+//            cout << (fabs(((tileSize * gridX) - tileSize) - (state.player.position.x - state.player.size.x*0.5f))+.1f);
+            cout << " Left == ture" <<endl;
+        return true;
+     
+        }
+    }
+    state.player.collidedBottom = false;
+    return false;
+}
+bool playerCollideRight(){
+    int gridX, gridY;
+    //   int gridX, gridY;
+    worldToTileCoordinates(state.player.position.x+0.5f*state.player.size.x,state.player.position.y,&gridX,&gridY);
+    cout << state.player.position.x;
+    if(gridX < map.mapWidth && abs(gridY) < map.mapHeight){
+//        int thisvar = map.mapData[gridY][gridX];
+//        cout << "gridX: " << gridX << " /gridY: " << gridY << " /world x: "<< state.player.position.x << " /world y: "<< state.player.position.y << " /Tile:" << thisvar <<endl;
+        if(map.mapData[gridY][gridX] != 0 && map.mapData[gridY][gridX]<90){
+            state.player.collidedRight = true;
+            state.player.position.x -= fabs(((tileSize * gridX)) - (state.player.position.x + state.player.size.x*0.5f))+0.001f;
+            cout << state.player.position.x << endl;
+//            cout << (fabs(((tileSize * gridX) + tileSize) - (state.player.position.x + state.player.size.x*0.5f))+.0001f);
+             cout << " Right!!!!!!!!! == ture" <<endl;
+            return true;
+        }
+    }
+    state.player.collidedBottom = false;
+    return false;
+}
 
 
 void drawMap(){
 //    cout << map.mapData;
+    vector<float> vertexData;
+    vector<float> texCoordData;
     for(int y=0; y < map.mapHeight; y++) {
         for(int x=0; x < map.mapWidth; x++) {
             
@@ -451,7 +542,7 @@ void setUp(){
     
     fontTexture = LoadTexture(RESOURCE_FOLDER"pixel_font.png");
     spriteTexture = LoadTexture(RESOURCE_FOLDER"sprites.png");
-    playertexture = SheetSprite(spriteTexture,80,tileSize);
+    playertexture = SheetSprite(spriteTexture,80,tileSize*scale);//draw player w/ size half of the tilesize
     keytexture = SheetSprite(spriteTexture,83,tileSize);
     map.Load(RESOURCE_FOLDER"map3.txt");
     glUseProgram(program.programID);
@@ -479,6 +570,15 @@ void processEvents() {
             while (SDL_PollEvent(&event)) {
                 if (event.type == SDL_QUIT || event.type == SDL_WINDOWEVENT_CLOSE) {
                     done = true;
+                }else if(event.type == SDL_KEYDOWN){
+                    if(event.key.keysym.scancode == SDL_SCANCODE_SPACE && playerCollideBottom()) {
+//                        state.player.position.y+=.02;
+                        state.player.velocity.y = 1.3f;
+                        cout << "jump" << endl;
+                        state.player.collidedBottom = false;
+                    }else{
+//                        state.player.velocity.y = 0.0f;
+                    }
                 }
                 break;
             case STATE_GAME_OVER:
@@ -495,11 +595,11 @@ void processEvents() {
 void update(float elapsed) {
     const Uint8* keys = SDL_GetKeyboardState(NULL);
     modelMatrix = glm::mat4(1.0f);
-    
+//    state.player.velocity.y = 0.0f;
     switch (mode) {
         case STATE_MAIN_MENU:
             break;
-        case STATE_GAME_LEVEL:
+        case STATE_GAME_LEVEL:{
             if(keys[SDL_SCANCODE_LEFT] ){
                 state.player.velocity.x = -1.5f;
             }else if(keys[SDL_SCANCODE_RIGHT]){
@@ -507,9 +607,20 @@ void update(float elapsed) {
             }else{
                 state.player.velocity.x = 0.0f;
             }
+            if(playerCollideLeft() || playerCollideRight()){
+                 state.player.velocity.x = 0.0f;
+             }
+            if(playerCollideTop() || playerCollideBottom()){
+                 state.player.velocity.y = 0.0f;
+             }
+            if(state.player.collision_check(state.key)){
+                state.key.position.x = -1000000;
+            }
+
+            
             state.player.update(elapsed);
             break;
-        case STATE_GAME_OVER:
+        }case STATE_GAME_OVER:
             break;
     }
 }
@@ -530,7 +641,7 @@ void render() {
             state.key.draw(program);
             //re-center
             glm::mat4 viewMatrix = glm::mat4(1.0f);
-            viewMatrix = glm::translate(viewMatrix, glm::vec3(-state.player.position.x, -state.player.position.y, 1.0f));
+            viewMatrix = glm::translate(viewMatrix, glm::vec3(-state.player.position.x, -state.player.position.y, 0.0f));
             program.SetViewMatrix(viewMatrix);
 
 //            DrawSpriteSheetSprite(program, 28, sprite_count_x, sprite_count_y,0.3f);
