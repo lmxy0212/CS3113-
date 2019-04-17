@@ -55,3 +55,8 @@ location=27,2,1,1
 type=player
 location=27,10,1,1
 
+[Entities]
+# bomb
+type=bomb
+location=25,17,1,1
+
