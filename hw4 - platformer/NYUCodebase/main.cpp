@@ -13,8 +13,6 @@
 #include "ShaderProgram.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-//#include "worldMap.hpp"
-
 #ifdef _WINDOWS
 #define RESOURCE_FOLDER ""
 #else
@@ -121,8 +119,6 @@ public:
                 input_size){
         this -> textureID = input_textureID;
         this -> index = ind;
-//        this -> width = input_width;
-//        this -> height = input_height;
         this -> spriteWidth = 1.0/(float)sprite_count_x;
         this -> spriteHeight = 1.0/(float)sprite_count_y;
         this -> size = input_size;
@@ -182,7 +178,6 @@ public:
         this->position = glm::vec2(pos_x,pos_y);
         this->velocity = glm::vec2(v_x,v_y);
         this->type = Type;
-//        this->i = ind;
         this->sprite = input_sprite;
         this->collidedBottom = false;
         this->collidedTop = false;
@@ -219,12 +214,10 @@ public:
     glm::vec2 position;
     glm::vec2 velocity;
     glm::vec2 size;
-//    float size;
     int i;
     SheetSprite sprite;
     string type;
     float scale;
-//    SheetSprite sprite;
     float health;
     bool collidedBottom;
     bool collidedTop;
@@ -264,8 +257,6 @@ class worldMap {
 public:
     worldMap();
     void Load(const string fileName);
-//    void placeEntity(string type, int placeX, int placeY);
-
     int mapWidth;
     int mapHeight;
     unsigned int **mapData;
@@ -397,7 +388,6 @@ void worldMap::Load(const string fileName) {
             ReadEntityData(infile);
             cout << initial;
             initial = false;
-            //only read form the txt file in the begining of the game
         }
     }
 }
@@ -582,7 +572,6 @@ void processEvents() {
                     done = true;
                 }else if(event.type == SDL_KEYDOWN){
                     if(event.key.keysym.scancode == SDL_SCANCODE_SPACE && playerCollideBottom()) {
-//                        state.player.position.y+=.02;
                         state.player.velocity.y = 1.3f;
                         cout << "jump" << endl;
                         state.player.collidedBottom = false;
@@ -667,14 +656,6 @@ void render() {
             viewMatrix = glm::translate(viewMatrix, glm::vec3(-state.player.position.x, -state.player.position.y, 0.0f));
             program.SetViewMatrix(viewMatrix);
 
-//            DrawSpriteSheetSprite(program, 28, sprite_count_x, sprite_count_y,0.3f);
-//            if(initial == true){
-//                initial = false;
-//            }else{
-//                state.player.draw(program);
-//                state.enemy.draw(program);
-//            }
-//            map.ReadEntityData();
             break;
         }
         case STATE_GAME_OVER:{
@@ -695,7 +676,6 @@ void render() {
 int main(int argc, char *argv[])
 {
     setUp();
-    //   SheetSprite(unsigned int textureID, float u, float v, float width, float height, float size);
 
     while (!done) {
         float ticks = (float)SDL_GetTicks()/1000.0f;
