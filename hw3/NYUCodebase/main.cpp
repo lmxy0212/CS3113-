@@ -105,7 +105,7 @@ void DrawText(ShaderProgram &program, int fontTexture, string text, float x, flo
     glDisableVertexAttribArray(program.positionAttribute);
     glDisableVertexAttribArray(program.texCoordAttribute);
 }
-//uniform sprite
+//non-uniform sprite
 class SheetSprite {
 public:
     SheetSprite(){};

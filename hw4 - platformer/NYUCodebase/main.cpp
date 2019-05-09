@@ -53,6 +53,7 @@ SDL_Window* displayWindow;
 bool win = false;
 bool lose = false;
 GLuint LoadTexture(const char* filePath) {
+    
     int w, h, comp;
     unsigned char* image = stbi_load(filePath, &w, &h, &comp, STBI_rgb_alpha);
     
@@ -546,7 +547,9 @@ void setUp(){
     playertexture = SheetSprite(spriteTexture,80,tileSize*scale);//draw player w/ size half of the tilesize
     keytexture = SheetSprite(spriteTexture,83,tileSize);
     bombtexture = SheetSprite(spriteTexture,70,tileSize);
-    map.Load(RESOURCE_FOLDER"map3.txt");
+    map.Load(RESOURCE_FOLDER"map1.txt");
+//    map2.Load(RESOURCE_FOLDER"map2.txt");
+//    map3.Load(RESOURCE_FOLDER"map3.txt");
     glUseProgram(program.programID);
     program.SetColor(1.0f, 0.5f, 0.0f,1.0f);
     glEnable(GL_BLEND);

@@ -132,7 +132,6 @@
 			isa = PBXGroup;
 			children = (
 				6DEF23BB1B96CC2600BCE792 /* fragment.glsl */,
-				B57900062229B28400F4A016 /* bomb.png */,
 				6DE9D2F01BA6AB8C002D599C /* fragment_textured.glsl */,
 				6DC707691BA7273500225B7D /* vertex_textured.glsl */,
 				6DEF23BE1B96CC2600BCE792 /* ShaderProgram.cpp */,
@@ -143,6 +142,7 @@
 				B579FFFF2229B23F00F4A016 /* durian.jpg */,
 				B579FFFE2229B23F00F4A016 /* Lychee.jpg */,
 				B57900002229B23F00F4A016 /* todoroki.png */,
+				B57900062229B28400F4A016 /* bomb.png */,
 			);
 			name = Code;
 			sourceTree = "<group>";
