@@ -46,21 +46,23 @@ GameMode mode = STATE_GAME_LEVEL_ONE;
 //GameMode mode = STATE_GAME_LEVEL_THREE;
 
 float playerAnimate = .1;
+float enemyAnimate = .1;
 float GRAVITY = 1.0f;
-int playerID = 0;
+int playerID = 1;
+int enemyID = 1;
 float accumulator = 0.0f;
 //int sprite_count_x = 16;
 //int sprite_count_y = 8;
-float tileSize = 0.1f;
+float tileSize = 0.15f;
 float scale = 1.5f;
 float elapsed = 0.0f;
 float lastFrameTicks = 0.0f;
 bool done = false;
 bool initial = true;
-bool playerCollideBottom();
-bool playerCollideTop();
-bool playerCollideLeft();
-bool playerCollideRight();
+bool playerCollideBottom(string type);
+bool playerCollideTop(string type);
+bool playerCollideLeft(string type);
+bool playerCollideRight(string type);
 vector<int> solidInd = {12,33,7,17,34,19,35,18};
 
 SDL_Window* displayWindow;
@@ -159,7 +161,7 @@ public:
 };
 
 void SheetSprite::Draw(ShaderProgram &program) {
-    u = (float)(((int)index) % sprite_count_x) / (float) sprite_count_y;
+    u = (float)(((int)index) % sprite_count_x) / (float) sprite_count_x;
     v = (float)(((int)index) / sprite_count_x) / (float) sprite_count_y;
 //    cout<< u << " " << v << endl;
     float texCoords[] = {
@@ -230,11 +232,11 @@ public:
         velocity.x += acceleration.x * elapsed;
         velocity.y += (acceleration.y - GRAVITY) * elapsed;
         position.y += elapsed * velocity.y;
-        playerCollideBottom();
-        playerCollideTop();
+        playerCollideBottom(type);
+        playerCollideTop(type);
         position.x += elapsed * velocity.x;
-        playerCollideRight();
-        playerCollideLeft();
+        playerCollideRight(type);
+        playerCollideLeft(type);
     }
     bool collision_check(Entity &e){
         if (position.x + 0.5f * size.x < e.position.x - 0.5f * e.size.x ||
@@ -266,7 +268,8 @@ struct GameState {
     Entity key;
     Entity player;
     vector<Entity> bullets;
-    vector<Entity> enemies;
+    Entity enemy;
+//    vector<Entity> enemies;
     vector<Entity> stars;
 };
 GameState state;
@@ -277,25 +280,31 @@ GameState state3;
 void set_state(GameState newstate){
     state.key = newstate.key;
     state.player = newstate.player;
+    state.enemy = newstate.enemy;
+//    state.enemies = newstate.enemies;
     state.bullets = newstate.bullets;
     state.stars = newstate.stars;
 }
 
 void animatePlayer(){
-//    cout<<playerID<<endl;
     if(playerID == 1){
         playerID = 0;
+        state.player.sprite.index = playerID;
     }
     else{
         playerID = 1;
+        state.player.sprite.index = playerID;
     }
-//    u = (float)(((int)index) % sprite_count_x) / (float) sprite_count_y;
-//    v = (float)(((int)index) / sprite_count_x) / (float) sprite_count_y;
-
-    state.player.sprite.u = (float)(((int)playerID) % 2);
-    state.player.sprite.v = (float)(((int)playerID) / 2);
-    
-//    cout << state.player.sprite.u << " " << state.player.sprite.v << endl;
+}
+void animatenemy(){
+    if(enemyID == 1){
+        enemyID = 0;
+        state.enemy.sprite.index = enemyID;
+    }
+    else{
+        enemyID = 1;
+        state.enemy.sprite.index = enemyID;
+    }
 }
 
 struct worldMapEntity {
@@ -317,7 +326,8 @@ void placeEntity(string& type, float position_x, float position_y, SheetSprite& 
         state.stars.push_back(Entity(type,mySprite,position_x,position_y,0.0f, 0.0f, 1.0f));
     }else if(type == "enemy"){
         cout << "enemy";
-        state.enemies.push_back(Entity(type,mySprite,position_x,position_y,0.0f, 0.0f, 1.0f));
+        state.enemy = Entity(type,mySprite,position_x,position_y,0.0f, 0.0f, scale);
+//        state.enemies.push_back(Entity(type,mySprite,position_x,position_y,0.0f, 0.0f, 1.0f));
     }
 }
 
@@ -467,75 +477,129 @@ void worldMap::Load(const string fileName) {
     }
 }
 
-bool playerCollideBottom(){
+bool playerCollideBottom(string type){
     int gridX, gridY;
-    worldToTileCoordinates(state.player.position.x,state.player.position.y-0.5f* state.player.size.y,&gridX,&gridY);
-    
-    if(gridX < map.mapWidth && abs(gridY) < map.mapHeight){
-        if(map.mapData[gridY][gridX] != 0 && map.mapData[gridY][gridX]<90){
-            state.player.position.y += fabs((-tileSize * gridY) -(state.player.position.y - state.player.size.y*0.5f))+0.001f;
-            state.player.collidedBot = true;
-            state.player.doubleJump = 2; //if collide bottom -> reset double jump
-            if(!state.player.jump){
-                state.player.velocity.y = 0.0f;
+    if(type == "player"){
+         worldToTileCoordinates(state.player.position.x,state.player.position.y-0.5f* state.player.size.y,&gridX,&gridY);
+        if(gridX < map.mapWidth && abs(gridY) < map.mapHeight){
+            if(map.mapData[gridY][gridX] != 0 && map.mapData[gridY][gridX]<90){
+                state.player.position.y += fabs((-tileSize * gridY) -(state.player.position.y - state.player.size.y*0.5f))+0.001f;
+                state.player.collidedBot = true;
+                state.player.doubleJump = 2; //if collide bottom -> reset double jump
+                if(!state.player.jump){
+                    state.player.velocity.y = 0.0f;
+                }
+                else{
+                    state.player.jump = false;
+                    //                state.player.doubleJump = 0;
+                }
+                return true;
+                
             }
-            else{
-                state.player.jump = false;
-//                state.player.doubleJump = 0;
-            }
-            return true;
             
         }
-        
+    }else if (type == "enemy"){
+         worldToTileCoordinates(state.enemy.position.x,state.enemy.position.y-0.5f* state.enemy.size.y,&gridX,&gridY);
+        if(gridX < map.mapWidth && abs(gridY) < map.mapHeight){
+            if(map.mapData[gridY][gridX] != 0 && map.mapData[gridY][gridX]<90){
+                state.enemy.position.y += fabs((-tileSize * gridY) -(state.enemy.position.y - state.enemy.size.y*0.5f))+0.001f;
+                state.enemy.collidedBot = true;
+                state.enemy.doubleJump = 2; //if collide bottom -> reset double jump
+                if(!state.enemy.jump){
+                    state.enemy.velocity.y = 0.0f;
+                }
+                else{
+                    state.enemy.jump = false;
+                    //                state.player.doubleJump = 0;
+                }
+                return true;
+            }
+        }
     }
     return false;
 }
 
-bool playerCollideTop(){
+
+bool playerCollideTop(string type){
     int gridX, gridY;
-    worldToTileCoordinates(state.player.position.x,state.player.position.y+0.5f*state.player.size.y,&gridX,&gridY);
-    
-    
-     if(gridX < map.mapWidth && abs(gridY) < map.mapHeight){
-         if(map.mapData[gridY][gridX] != 0 && map.mapData[gridY][gridX]<90){
-            state.player.position.y -= fabs(((-tileSize * gridY) -tileSize) - (state.player.position.y + state.player.size.y*0.5f))+0.001f;
-            cout << " Top == ture" <<endl;
-            state.player.velocity.y = 0.0f;
-            return true;
-            
+    if(type == "player"){
+        worldToTileCoordinates(state.player.position.x,state.player.position.y+0.5f*state.player.size.y,&gridX,&gridY);
+        
+        
+        if(gridX < map.mapWidth && abs(gridY) < map.mapHeight){
+            if(map.mapData[gridY][gridX] != 0 && map.mapData[gridY][gridX]<90){
+                state.player.position.y -= fabs(((-tileSize * gridY) -tileSize) - (state.player.position.y + state.player.size.y*0.5f))+0.001f;
+                cout << " Top == ture" <<endl;
+                state.player.velocity.y = 0.0f;
+                return true;
+                
+            }
         }
-     }
-    return false;
-}
-bool playerCollideLeft(){
-    int gridX, gridY;
-    worldToTileCoordinates(state.player.position.x-0.5f*state.player.size.x,state.player.position.y,&gridX,&gridY);
-    if(gridX < map.mapWidth && abs(gridY) < map.mapHeight){
-        if(map.mapData[gridY][gridX] != 0 && map.mapData[gridY][gridX]<90){
-            state.player.position.x += fabs(((tileSize * gridX) + tileSize) - (state.player.position.x - state.player.size.x*0.5f))+0.00001f;
-        cout << " Left == ture" <<endl;
-        state.player.velocity.x = 0.0f;
-        return true;
-     
+    }else if(type == "enemy"){
+        worldToTileCoordinates(state.enemy.position.x,state.enemy.position.y+0.5f*state.enemy.size.y,&gridX,&gridY);
+        
+        
+        if(gridX < map.mapWidth && abs(gridY) < map.mapHeight){
+            if(map.mapData[gridY][gridX] != 0 && map.mapData[gridY][gridX]<90){
+                state.enemy.position.y -= fabs(((-tileSize * gridY) -tileSize) - (state.enemy.position.y + state.enemy.size.y*0.5f))+0.001f;
+                cout << " Top == ture" <<endl;
+                state.enemy.velocity.y = 0.0f;
+                return true;
+            }
         }
     }
+    
     return false;
 }
-bool playerCollideRight(){
+bool playerCollideLeft(string type){
     int gridX, gridY;
-    //   int gridX, gridY;
-    worldToTileCoordinates(state.player.position.x+0.5f*state.player.size.x,state.player.position.y,&gridX,&gridY);
-//    cout << state.player.position.x;
-    if(gridX < map.mapWidth && abs(gridY) < map.mapHeight){
-//        int thisvar = map.mapData[gridY][gridX];
-//        cout << "gridX: " << gridX << " /gridY: " << gridY << " /world x: "<< state.player.position.x << " /world y: "<< state.player.position.y << " /Tile:" << thisvar <<endl;
-        if(map.mapData[gridY][gridX] != 0 && map.mapData[gridY][gridX]<90){
-            state.player.position.x -= fabs((tileSize * gridX) - (state.player.position.x + state.player.size.x / 2.0f))+0.000001f;
-//            cout << state.player.position.x << endl;
-//            cout << (fabs(((tileSize * gridX) + tileSize) - (state.player.position.x + state.player.size.x*0.5f))+.0001f);
-             cout << " Right == ture" <<endl;
-            state.player.velocity.x = 0.0f;
-            return true;
+    if(type == "player"){
+        worldToTileCoordinates(state.player.position.x-0.5f*state.player.size.x,state.player.position.y,&gridX,&gridY);
+        if(gridX < map.mapWidth && abs(gridY) < map.mapHeight){
+            if(map.mapData[gridY][gridX] != 0 && map.mapData[gridY][gridX]<90){
+                state.player.position.x += fabs(((tileSize * gridX) + tileSize) - (state.player.position.x - state.player.size.x*0.5f))+0.00001f;
+                cout << " Left == ture" <<endl;
+                state.player.velocity.x = 0.0f;
+                return true;
+                
+            }
+        }
+    }else if(type == "enemy"){
+        worldToTileCoordinates(state.enemy.position.x-0.5f*state.enemy.size.x,state.enemy.position.y,&gridX,&gridY);
+        if(gridX < map.mapWidth && abs(gridY) < map.mapHeight){
+            if(map.mapData[gridY][gridX] != 0 && map.mapData[gridY][gridX]<90){
+                state.enemy.position.x += fabs(((tileSize * gridX) + tileSize) - (state.enemy.position.x - state.enemy.size.x*0.5f))+0.00001f;
+                cout << " Left == ture" <<endl;
+                state.enemy.velocity.x = 0.0f;
+                return true;
+                
+            }
+        }
+    }
+    
+    return false;
+}
+bool playerCollideRight(string type){
+    int gridX, gridY;
+    if(type == "player"){
+        worldToTileCoordinates(state.player.position.x+0.5f*state.player.size.x,state.player.position.y,&gridX,&gridY);
+        if(gridX < map.mapWidth && abs(gridY) < map.mapHeight){
+            if(map.mapData[gridY][gridX] != 0 && map.mapData[gridY][gridX]<90){
+                state.player.position.x -= fabs((tileSize * gridX) - (state.player.position.x + state.player.size.x / 2.0f))+0.000001f;
+                cout << " Right == ture" <<endl;
+                state.player.velocity.x = 0.0f;
+                return true;
+            }
+        }
+    }else if(type == "enemy"){
+        worldToTileCoordinates(state.enemy.position.x+0.5f*state.enemy.size.x,state.enemy.position.y,&gridX,&gridY);
+        if(gridX < map.mapWidth && abs(gridY) < map.mapHeight){
+            if(map.mapData[gridY][gridX] != 0 && map.mapData[gridY][gridX]<90){
+                state.enemy.position.x -= fabs((tileSize * gridX) - (state.enemy.position.x + state.enemy.size.x / 2.0f))+0.000001f;
+                cout << " Right == ture" <<endl;
+                state.enemy.velocity.x = 0.0f;
+                return true;
+            }
         }
     }
     return false;
@@ -619,7 +683,7 @@ void setUp(){
     GoodjobTexture = LoadTexture(RESOURCE_FOLDER"GoodJob.png");
     mainTexture = LoadTexture(RESOURCE_FOLDER"mainManue.png");
     playertexture = SheetSprite(bakugoSprite,playerID,tileSize*scale,2,1);
-    enemytexture = SheetSprite(todorokiSprite,1,tileSize*scale,2,1);
+    enemytexture = SheetSprite(todorokiSprite,enemyID,tileSize*scale,2,1);
 //    playertexture = SheetSprite(spriteTexture,80,tileSize*scale,16,8);
     keytexture = SheetSprite(spriteTexture,83,tileSize,16,8);
     startexture = SheetSprite(starSprite,0,tileSize,1,1);
@@ -668,12 +732,22 @@ void processEvents() {
 //                    cout << "hummm I wonder why ";
 //                    cout << playerCollideBottom() << " ";
 //                    cout << state.player.collidedBot << endl;
-                    if(event.key.keysym.scancode == SDL_SCANCODE_SPACE) {
+                    if(event.key.keysym.scancode == SDL_SCANCODE_RSHIFT) {
                         if(state.player.doubleJump>0){
                             state.player.velocity.y = 1.3f;
                             state.player.doubleJump -=1;
                             state.player.jump = true;
                             state.player.collidedBot = false;
+                            cout << "jump!!!!!!!" << endl;
+                        } //already jump twice
+                        
+                    }
+                    if(event.key.keysym.scancode == SDL_SCANCODE_LSHIFT) {
+                        if(state.enemy.doubleJump>0){
+                            state.enemy.velocity.y = 1.3f;
+                            state.enemy.doubleJump -=1;
+                            state.enemy.jump = true;
+                            state.enemy.collidedBot = false;
                             cout << "jump!!!!!!!" << endl;
                         } //already jump twice
                         
@@ -754,24 +828,47 @@ void update(float elapsed) {
         case STATE_INSTRUCTION:
             break;
         case STATE_GAME_LEVEL_ONE:{
-            if(keys[SDL_SCANCODE_LEFT] && !playerCollideLeft()){
+            if(keys[SDL_SCANCODE_LEFT] && !playerCollideLeft("player")){
                 cout << "left" <<endl;
                 state.player.acceleration.x = -1.5f;
                 playerAnimate -= elapsed;
-                if(playerAnimate < 0){
+                if(playerAnimate < 0 && !(state.player.jump)){
                     animatePlayer();
                     playerAnimate = .1;
                 }
-            }else if(keys[SDL_SCANCODE_RIGHT] && !playerCollideRight()){
+            }else if(keys[SDL_SCANCODE_RIGHT] && !playerCollideRight("player")){
                 cout << "right" << endl;
                 state.player.acceleration.x = 1.5f;
                 playerAnimate -= elapsed;
-                if(playerAnimate < 0){
+                if(playerAnimate < 0 && !(state.player.jump)){
                     animatePlayer();
                     playerAnimate = .1;
                 }
             }else{
                 state.player.velocity.x = 0.0f;
+                playerID = 1;
+                state.player.sprite.index = playerID;
+            }
+            if(keys[SDL_SCANCODE_A] && !playerCollideLeft("enemy")){
+                cout << "left" <<endl;
+                state.enemy.acceleration.x = -1.5f;
+                enemyAnimate -= elapsed;
+                if(enemyAnimate < 0 && !(state.enemy.jump)){
+                    animatenemy();
+                    enemyAnimate = .1;
+                }
+            }else if(keys[SDL_SCANCODE_D] && !playerCollideRight("enemy")){
+                cout << "right" << endl;
+                state.enemy.acceleration.x = 1.5f;
+                enemyAnimate -= elapsed;
+                if(enemyAnimate < 0 && !(state.enemy.jump)){
+                    animatenemy();
+                    enemyAnimate = .1;
+                }
+            }else{
+                state.enemy.velocity.x = 0.0f;
+                enemyID = 1;
+                state.enemy.sprite.index = enemyID;
             }
             if(state.player.collision_check(state.key)){
                 state.key.position.x = -1000000;
@@ -787,16 +884,18 @@ void update(float elapsed) {
 //            }
             if(!win && !lose){
                 state.player.update(elapsed);
+                state.enemy.update(elapsed);
                 for(int i = 0; i < 5; i ++){
 //                    state.stars[i].update(elapsed);
 //                    state.enemies[i].update(elapsed);
                 }
                 state.player.acceleration.x = 0.0f;
+                state.enemy.acceleration.x = 0.0f;
             }
             break;
         
         }case STATE_GAME_LEVEL_TWO:
-            if(keys[SDL_SCANCODE_LEFT] && !playerCollideLeft()){
+            if(keys[SDL_SCANCODE_LEFT] && !playerCollideLeft("player")){
                 cout << "left" <<endl;
                 state.player.acceleration.x = -1.5f;
                 playerAnimate -= elapsed;
@@ -804,7 +903,7 @@ void update(float elapsed) {
                     animatePlayer();
                     playerAnimate = .1;
                 }
-            }else if(keys[SDL_SCANCODE_RIGHT] && !playerCollideRight()){
+            }else if(keys[SDL_SCANCODE_RIGHT] && !playerCollideRight("player")){
                 cout << "right" << endl;
                 state.player.acceleration.x = 1.5f;
                 playerAnimate -= elapsed;
@@ -812,7 +911,7 @@ void update(float elapsed) {
                     animatePlayer();
                     playerAnimate = .1;
                 }
-            }else if(keys[SDL_SCANCODE_UP] && !playerCollideTop()){
+            }else if(keys[SDL_SCANCODE_UP] && !playerCollideTop("player")){
                 cout << "up" << endl;
                 state.player.acceleration.y = 1.5f;
                 playerAnimate -= elapsed;
@@ -820,7 +919,7 @@ void update(float elapsed) {
                     animatePlayer();
                     playerAnimate = .1;
                 }
-            }else if(keys[SDL_SCANCODE_DOWN] && !playerCollideBottom()){
+            }else if(keys[SDL_SCANCODE_DOWN] && !playerCollideBottom("player")){
                 cout << "down" << endl;
                 state.player.acceleration.y = -1.5f;
                 playerAnimate -= elapsed;
@@ -911,14 +1010,15 @@ void render() {
         case STATE_GAME_LEVEL_ONE:{
             modelMatrix = glm::mat4(1.0f);
             program.SetModelMatrix(modelMatrix);
-            glClearColor(0.0f, 0.2f, 0.4f, 1.0f);
+            glClearColor(0.0f, 0.7f, 1.0f, 1.0f);
             drawMap();
             state.player.draw(program);
             state.key.draw(program);
+            state.enemy.draw(program);
             for(int i = 0; i < 5; i ++){
-                cout<<state.enemies[i].position.x<<" "<< state.enemies[i].position.x << endl;
+//                cout<<state.enemies[i].position.x<<" "<< state.enemies[i].position.x << endl;
                 state.stars[i].draw(program);
-                state.enemies[i].draw(program);
+//                state.enemies[i].draw(program);
             }
 
             //re-center
@@ -936,10 +1036,11 @@ void render() {
             drawMap();
             state.player.draw(program);
             state.key.draw(program);
+            state.enemy.draw(program);
             for(int i = 0; i < 5; i ++){
 //                cout<<state.enemies[i].position.x<<" "<< state.enemies[i].position.x << endl;
                 state.stars[i].draw(program);
-                state.enemies[i].draw(program);
+//                state.enemies[i].draw(program);
             }
             
             //re-center

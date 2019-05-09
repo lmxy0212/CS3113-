@@ -7,7 +7,7 @@ orientation=orthogonal
 background_color=0,0,0,255
 
 [tilesets]
-tileset=../../my_drawings/all for boba/boba_spriteUniform.png,2048,2048,0,0
+tileset=,32,32,0,0
 tileset=,32,32,0,0
 tileset=../../hw4 - platformer/NYUCodebase/sprites.png,16,16,0,0
 
@@ -137,37 +137,12 @@ type=star
 location=23,56,1,1
 
 [Entities]
-# enemy5
+# enemy
 type=enemy
-location=11,24,1,1
-
-[Entities]
-# enemy2
-type=enemy
-location=6,74,1,1
-
-[Entities]
-# enemy1
-type=enemy
-location=4,88,1,1
-
-[Entities]
-# enemy3
-type=enemy
-location=7,52,1,1
-
-[Entities]
-# enemy4
-type=enemy
-location=29,33,1,1
-
-[Entities]
-# enemy6
-type=enemy
-location=17,11,1,1
+location=4,83,1,1
 
 [Entities]
 # player
 type=player
-location=15,79,1,1
+location=10,83,1,1
 
