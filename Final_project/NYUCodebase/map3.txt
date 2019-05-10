@@ -84,39 +84,14 @@ data=
 33,36,18,18,18,18,18,18,34,34,34,34,34,34,34,33,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,34,36,33
 
 [Entities]
-# enemy1
+# enemy
 type=enemy
-location=9,65,1,1
-
-[Entities]
-# enemy3
-type=enemy
-location=42,40,1,1
-
-[Entities]
-# enemy4
-type=enemy
-location=32,16,1,1
-
-[Entities]
-# enemy2
-type=enemy
-location=26,62,1,1
-
-[Entities]
-# enemy5
-type=enemy
-location=18,28,1,1
-
-[Entities]
-# enemy6
-type=enemy
-location=24,20,1,1
+location=35,25,1,1
 
 [Entities]
 # key
 type=key
-location=10,1,1,1
+location=43,32,1,1
 
 [Entities]
 # star
@@ -146,5 +121,5 @@ location=37,64,1,1
 [Entities]
 # player
 type=player
-location=33,27,1,1
+location=32,26,1,1
 

@@ -84,39 +84,14 @@ type=star
 location=49,37,1,1
 
 [Entities]
-# enemy2
+# enemy
 type=enemy
-location=8,41,1,1
-
-[Entities]
-# enemy1
-type=enemy
-location=3,4,1,1
-
-[Entities]
-# enemy3
-type=enemy
-location=54,24,1,1
-
-[Entities]
-# enemy5
-type=enemy
-location=32,6,1,1
-
-[Entities]
-# enemy4
-type=enemy
-location=22,12,1,1
-
-[Entities]
-# enemy6
-type=enemy
-location=54,9,1,1
+location=4,37,1,1
 
 [Entities]
 # key
 type=key
-location=48,1,1,1
+location=11,35,1,1
 
 [Entities]
 # player

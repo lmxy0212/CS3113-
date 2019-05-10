@@ -38,15 +38,18 @@ GLuint starSprite;
 GLuint GGtexture;
 GLuint GoodjobTexture;
 GLint mainTexture;
+GLint keySprite;
+GLint exitTexture;
 SDL_Event event;
-enum GameMode {STATE_MAIN_MENU,STATE_INSTRUCTION, STATE_GAME_LEVEL_ONE, STATE_GAME_LEVEL_TWO, STATE_GAME_LEVEL_THREE, STATE_GAME_BOSS, STATE_GAME_OVER};
-//GameMode mode = STATE_MAIN_MENU;
-GameMode mode = STATE_GAME_LEVEL_ONE;
+enum GameMode {STATE_MAIN_MENU,STATE_INSTRUCTION, STATE_EXIT,STATE_GAME_LEVEL_ONE, STATE_GAME_LEVEL_TWO, STATE_GAME_LEVEL_THREE, STATE_GAME_OVER};
+GameMode mode = STATE_MAIN_MENU;
+//GameMode mode = STATE_GAME_LEVEL_ONE;
 //GameMode mode = STATE_GAME_LEVEL_TWO;
 //GameMode mode = STATE_GAME_LEVEL_THREE;
 
-float playerAnimate = .1;
-float enemyAnimate = .1;
+float playerAnimate = 0.1f;
+float enemyAnimate = 0.1f;
+float mainAnimate = 0.1f;
 float GRAVITY = 1.0f;
 int playerID = 1;
 int enemyID = 1;
@@ -197,6 +200,7 @@ SheetSprite playertexture;
 SheetSprite keytexture;
 SheetSprite startexture;
 SheetSprite enemytexture;
+SheetSprite mainSprite;
 
 float lerp(float v0, float v1, float t) {
     return (1.0f - t) * v0 + t * v1;
@@ -225,18 +229,24 @@ public:
         modelMatrix = glm::translate(modelMatrix, glm::vec3(position.x, position.y, 1.0f));
         program.SetModelMatrix(modelMatrix);//move
         sprite.Draw(p);
+        if(type == "player"){
+            DrawText(program, fontTexture, "p1: "+to_string(score), position.x-size.x,position.y+size.y,0.07f, 0.01f);
+        }else if(type == "enemy"){
+            DrawText(program, fontTexture, "p2: "+to_string(score), position.x-size.x,position.y+size.y,0.07f, 0.01f);
+        }
     }
     void update(float elapsed) {
         velocity.x = lerp(velocity.x, 0.0f, elapsed * FRICTION_X);
         velocity.y = lerp(velocity.y, 0.0f, elapsed * FRICTION_Y);
         velocity.x += acceleration.x * elapsed;
         velocity.y += (acceleration.y - GRAVITY) * elapsed;
+        position.x += elapsed * velocity.x;
+        playerCollideLeft(type);
+        playerCollideRight(type);
         position.y += elapsed * velocity.y;
         playerCollideBottom(type);
         playerCollideTop(type);
-        position.x += elapsed * velocity.x;
-        playerCollideRight(type);
-        playerCollideLeft(type);
+        
     }
     bool collision_check(Entity &e){
         if (position.x + 0.5f * size.x < e.position.x - 0.5f * e.size.x ||
@@ -248,7 +258,22 @@ public:
         else {
             return true;
         }
-        
+    }
+    bool colide_right(Entity e){
+        if(position.x + 0.5f * size.x > e.position.x - 0.5f * e.size.x){return true;}
+        else{return false;}
+    }
+    bool colide_left(Entity e){
+        if(position.x - 0.5f * size.x < e.position.x + 0.5f * e.size.x){return true;}
+        else{return false;}
+    }
+    bool colide_bot(Entity e){
+        if(position.y - 0.5f * size.y < e.position.y + 0.5f * e.size.y){return true;}
+        else{return false;}
+    }
+    bool colide_top(Entity e){
+        if(position.y + 0.5f * size.y < e.position.y - 0.5f * e.size.y){return true;}
+        else{return false;}
     }
     glm::vec2 position;
     glm::vec2 velocity;
@@ -258,7 +283,7 @@ public:
     SheetSprite sprite;
     string type;
     float scale;
-    float health;
+    int score = 0;
     bool jump;
     int doubleJump = 2;
     bool collidedBot;
@@ -267,8 +292,10 @@ public:
 struct GameState {
     Entity key;
     Entity player;
-    vector<Entity> bullets;
+//    vector<Entity> bullets;
     Entity enemy;
+//    int player_score = 0;
+//    int enemy_score = 0;
 //    vector<Entity> enemies;
     vector<Entity> stars;
 };
@@ -281,8 +308,6 @@ void set_state(GameState newstate){
     state.key = newstate.key;
     state.player = newstate.player;
     state.enemy = newstate.enemy;
-//    state.enemies = newstate.enemies;
-    state.bullets = newstate.bullets;
     state.stars = newstate.stars;
 }
 
@@ -498,6 +523,9 @@ bool playerCollideBottom(string type){
             }
             
         }
+//        if(state.player.collision_check(state.enemy) && state.player.colide_bot(state.enemy)){
+//            state.player.position.y += fabs( (state.enemy.position.y + state.enemy.size.y*0.5f)-(state.player.position.y - state.player.size.y*0.5f))+0.001f;
+//        }
     }else if (type == "enemy"){
          worldToTileCoordinates(state.enemy.position.x,state.enemy.position.y-0.5f* state.enemy.size.y,&gridX,&gridY);
         if(gridX < map.mapWidth && abs(gridY) < map.mapHeight){
@@ -515,6 +543,9 @@ bool playerCollideBottom(string type){
                 return true;
             }
         }
+//        if(state.enemy.collision_check(state.player) && state.enemy.colide_bot(state.player)){
+//            state.enemy.position.y += fabs( (state.player.position.y + state.player.size.y*0.5f)-(state.enemy.position.y - state.enemy.size.y*0.5f))+0.001f;
+//        }
     }
     return false;
 }
@@ -535,6 +566,9 @@ bool playerCollideTop(string type){
                 
             }
         }
+//        if(state.player.collision_check(state.enemy)){
+//            state.player.position.y += fabs( (state.enemy.position.y - state.enemy.size.y*0.5f)-(state.player.position.y + state.player.size.y*0.5f))+0.001f;
+//        }
     }else if(type == "enemy"){
         worldToTileCoordinates(state.enemy.position.x,state.enemy.position.y+0.5f*state.enemy.size.y,&gridX,&gridY);
         
@@ -547,7 +581,11 @@ bool playerCollideTop(string type){
                 return true;
             }
         }
+//        if(state.enemy.collision_check(state.player)){
+//            state.enemy.position.y += fabs( (state.player.position.y - state.player.size.y*0.5f)-(state.enemy.position.y + state.enemy.size.y*0.5f))+0.001f;
+//        }
     }
+    
     
     return false;
 }
@@ -555,21 +593,31 @@ bool playerCollideLeft(string type){
     int gridX, gridY;
     if(type == "player"){
         worldToTileCoordinates(state.player.position.x-0.5f*state.player.size.x,state.player.position.y,&gridX,&gridY);
+//        if(state.player.collision_check(state.enemy) && state.player.colide_left(state.enemy)){
+//            cout << "player Left == ture" <<endl;
+//            state.player.position.x += fabs( (state.enemy.position.x + state.enemy.size.x*0.5f)-(state.player.position.x - state.player.size.x*0.5f))+0.00001f;
+//        }
         if(gridX < map.mapWidth && abs(gridY) < map.mapHeight){
             if(map.mapData[gridY][gridX] != 0 && map.mapData[gridY][gridX]<90){
                 state.player.position.x += fabs(((tileSize * gridX) + tileSize) - (state.player.position.x - state.player.size.x*0.5f))+0.00001f;
-                cout << " Left == ture" <<endl;
+                cout << "Left == ture" <<endl;
                 state.player.velocity.x = 0.0f;
                 return true;
                 
             }
         }
+        
     }else if(type == "enemy"){
         worldToTileCoordinates(state.enemy.position.x-0.5f*state.enemy.size.x,state.enemy.position.y,&gridX,&gridY);
+//        if(state.enemy.collision_check(state.player)&&state.enemy.colide_left(state.player)){
+//            cout << "Enemy Left == ture" <<endl;
+//            state.enemy.position.x += fabs( (state.player.position.x + state.player.size.x*0.5f)-(state.enemy.position.x - state.enemy.size.x*0.5f))+0.00001f;
+//        }
+
         if(gridX < map.mapWidth && abs(gridY) < map.mapHeight){
             if(map.mapData[gridY][gridX] != 0 && map.mapData[gridY][gridX]<90){
                 state.enemy.position.x += fabs(((tileSize * gridX) + tileSize) - (state.enemy.position.x - state.enemy.size.x*0.5f))+0.00001f;
-                cout << " Left == ture" <<endl;
+                cout << "Left == ture" <<endl;
                 state.enemy.velocity.x = 0.0f;
                 return true;
                 
@@ -583,20 +631,28 @@ bool playerCollideRight(string type){
     int gridX, gridY;
     if(type == "player"){
         worldToTileCoordinates(state.player.position.x+0.5f*state.player.size.x,state.player.position.y,&gridX,&gridY);
+//        if(state.player.collision_check(state.enemy) && state.player.colide_right(state.enemy)){
+//            cout << "Player Right == ture" <<endl;
+//            state.player.position.x -= fabs( (state.enemy.position.x - state.enemy.size.x*0.5f)-(state.player.position.x + state.player.size.x*0.5f))+0.00001f;
+//        }
         if(gridX < map.mapWidth && abs(gridY) < map.mapHeight){
             if(map.mapData[gridY][gridX] != 0 && map.mapData[gridY][gridX]<90){
                 state.player.position.x -= fabs((tileSize * gridX) - (state.player.position.x + state.player.size.x / 2.0f))+0.000001f;
-                cout << " Right == ture" <<endl;
+                cout << "Right == ture" <<endl;
                 state.player.velocity.x = 0.0f;
                 return true;
             }
         }
+       
     }else if(type == "enemy"){
         worldToTileCoordinates(state.enemy.position.x+0.5f*state.enemy.size.x,state.enemy.position.y,&gridX,&gridY);
+//        if(state.enemy.collision_check(state.player)&& state.enemy.colide_right(state.player)){
+//            state.enemy.position.x -= fabs( (state.player.position.x - state.player.size.x*0.5f)-(state.enemy.position.x + state.enemy.size.x*0.5f))+0.00001f;
+//        }
         if(gridX < map.mapWidth && abs(gridY) < map.mapHeight){
             if(map.mapData[gridY][gridX] != 0 && map.mapData[gridY][gridX]<90){
                 state.enemy.position.x -= fabs((tileSize * gridX) - (state.enemy.position.x + state.enemy.size.x / 2.0f))+0.000001f;
-                cout << " Right == ture" <<endl;
+                cout << "Right == ture" <<endl;
                 state.enemy.velocity.x = 0.0f;
                 return true;
             }
@@ -679,13 +735,16 @@ void setUp(){
     todorokiSprite = LoadTexture(RESOURCE_FOLDER"todorokiSprite.png");
     starSprite = LoadTexture(RESOURCE_FOLDER"durian.png");
     bakugoSprite = LoadTexture(RESOURCE_FOLDER"bakugoSprite.png");
+    keySprite = LoadTexture(RESOURCE_FOLDER"key.png");
     GGtexture = LoadTexture(RESOURCE_FOLDER"GG.png");
     GoodjobTexture = LoadTexture(RESOURCE_FOLDER"GoodJob.png");
     mainTexture = LoadTexture(RESOURCE_FOLDER"mainManue.png");
+    exitTexture = LoadTexture(RESOURCE_FOLDER"exit.png");
+    mainSprite = SheetSprite(mainTexture,1,0.75,1,2);
     playertexture = SheetSprite(bakugoSprite,playerID,tileSize*scale,2,1);
     enemytexture = SheetSprite(todorokiSprite,enemyID,tileSize*scale,2,1);
 //    playertexture = SheetSprite(spriteTexture,80,tileSize*scale,16,8);
-    keytexture = SheetSprite(spriteTexture,83,tileSize,16,8);
+    keytexture = SheetSprite(keySprite,0,tileSize,1,1);
     startexture = SheetSprite(starSprite,0,tileSize,1,1);
 //    bombtexture = SheetSprite(spriteTexture,70,tileSize);
 //    set_state(state1);
@@ -709,12 +768,25 @@ void processEvents() {
                 }else if(event.type == SDL_KEYDOWN){
                     if(event.key.keysym.scancode == SDL_SCANCODE_RETURN){
                         mode = STATE_INSTRUCTION;
-//                        mode = STATE_GAME_LEVEL;
+                    }
+                    if(event.key.keysym.scancode == SDL_SCANCODE_ESCAPE){
+                        mode = STATE_EXIT;
                     }
                 }
             }
             break;
-        case STATE_INSTRUCTION:
+        case STATE_EXIT:{
+            while (SDL_PollEvent(&event)) {
+                if (event.type == SDL_QUIT || event.type == SDL_WINDOWEVENT_CLOSE) {
+                    done = true;
+                }else if(event.type == SDL_KEYDOWN){
+                    if(event.key.keysym.scancode == SDL_SCANCODE_RETURN){
+                        done = true;
+                    }
+                }
+            }
+            break;
+        }case STATE_INSTRUCTION:
             while (SDL_PollEvent(&event)) {
                 if (event.type == SDL_QUIT || event.type == SDL_WINDOWEVENT_CLOSE) {
                     done = true;
@@ -722,9 +794,13 @@ void processEvents() {
                     if(event.key.keysym.scancode == SDL_SCANCODE_RETURN){
                         mode = STATE_GAME_LEVEL_ONE;
                     }
+                    if(event.key.keysym.scancode == SDL_SCANCODE_ESCAPE){
+                        mode = STATE_EXIT;
+                    }
                 }
             }
-        case STATE_GAME_LEVEL_ONE:
+            break;
+        case STATE_GAME_LEVEL_ONE:{
             while (SDL_PollEvent(&event)) {
                 if (event.type == SDL_QUIT || event.type == SDL_WINDOWEVENT_CLOSE) {
                     done = true;
@@ -732,6 +808,9 @@ void processEvents() {
 //                    cout << "hummm I wonder why ";
 //                    cout << playerCollideBottom() << " ";
 //                    cout << state.player.collidedBot << endl;
+                    if(event.key.keysym.scancode == SDL_SCANCODE_ESCAPE){
+                        mode = STATE_EXIT;
+                    }
                     if(event.key.keysym.scancode == SDL_SCANCODE_RSHIFT) {
                         if(state.player.doubleJump>0){
                             state.player.velocity.y = 1.3f;
@@ -750,72 +829,135 @@ void processEvents() {
                             state.enemy.collidedBot = false;
                             cout << "jump!!!!!!!" << endl;
                         } //already jump twice
-                        
                     }
-                    
+                }
+            }
+            worldToTileCoordinates(state.player.position.x,state.player.position.y-0.5f* state.player.size.y,&gridX,&gridY);
+            if(map.mapData[gridY][gridX] == 100){
+                lose = true;
+            }
+            worldToTileCoordinates(state.enemy.position.x,state.enemy.position.y-0.5f* state.enemy.size.y,&gridX,&gridY);
+            if(map.mapData[gridY][gridX] == 100){
+                lose = true;
+            }
+            if(win == true){
+                win = false;
+                int temp1 = state.player.score;
+                int temp2 = state.enemy.score;
+                initial = true;
+                set_state(state2);
+                map.Load(RESOURCE_FOLDER"map2.txt");
+                cout<<"GO TO L2"<<endl;
+                state.player.score = temp1;
+                state.enemy.score = temp2;
+                mode = STATE_GAME_LEVEL_TWO;
+                //                    cout<<map.mapWidth << " " << map.mapHeight<<endl;
+                GRAVITY = 0.0f;
+            }
+            if(lose == true){
+                mode = STATE_GAME_OVER;
+            }
+             break;
+        }case STATE_GAME_LEVEL_TWO:{
+                while (SDL_PollEvent(&event)) {
+                    if (event.type == SDL_QUIT || event.type == SDL_WINDOWEVENT_CLOSE) {
+                        done = true;
+                    }else if(event.type == SDL_KEYDOWN){
+                        if(event.key.keysym.scancode == SDL_SCANCODE_ESCAPE){
+                            mode = STATE_EXIT;
+                        }
+                    }
                 }
                 worldToTileCoordinates(state.player.position.x,state.player.position.y-0.5f* state.player.size.y,&gridX,&gridY);
                 if(map.mapData[gridY][gridX] == 100){
                     lose = true;
                 }
+                worldToTileCoordinates(state.enemy.position.x,state.enemy.position.y-0.5f* state.enemy.size.y,&gridX,&gridY);
+                if(map.mapData[gridY][gridX] == 100){
+                    lose = true;
+                }
                 if(win == true){
-                    mode = STATE_GAME_LEVEL_TWO;
-                    initial = true;
-                    set_state(state2);
-                    map.Load(RESOURCE_FOLDER"map2.txt");
-                    cout<<map.mapWidth << " " << map.mapHeight<<endl;
-                    GRAVITY = 0.0f;
                     win = false;
+                    int temp1 = state.player.score;
+                    int temp2 = state.enemy.score;
+                    initial = true;
+                    set_state(state3);
+                    map.Load(RESOURCE_FOLDER"map3.txt");
+                    cout<<"GO TO L3"<<endl;
+                    state.player.score = temp1;
+                    state.enemy.score = temp2;
+                    //                    cout<<map.mapWidth << " " << map.mapHeight<<endl;
+                    GRAVITY = 1.0f;
+                    mode = STATE_GAME_LEVEL_THREE;
                 }
                 if(lose == true){
                     mode = STATE_GAME_OVER;
                 }
-
+                
+                
                 break;
-            case STATE_GAME_LEVEL_TWO:
+        }case STATE_GAME_LEVEL_THREE:{
                 while (SDL_PollEvent(&event)) {
-                   
                     if (event.type == SDL_QUIT || event.type == SDL_WINDOWEVENT_CLOSE) {
                         done = true;
-                    }
-                    worldToTileCoordinates(state.player.position.x,state.player.position.y-0.5f* state.player.size.y,&gridX,&gridY);
-                    if(map.mapData[gridY][gridX] == 100){
-                        lose = true;
-                    }
-                    if(win == true){
-                        mode = STATE_GAME_LEVEL_THREE;
-                        initial = true;
-                        map.Load(RESOURCE_FOLDER"map2.txt");
-                        state = state2;
-                        GRAVITY = 1.0f;
-                        win = false;
-                    }
-                    if(lose == true){
-                        mode = STATE_GAME_OVER;
+                    }else if(event.type == SDL_KEYDOWN){
+                        //                    cout << "hummm I wonder why ";
+                        //                    cout << playerCollideBottom() << " ";
+                        //                    cout << state.player.collidedBot << endl;
+                        if(event.key.keysym.scancode == SDL_SCANCODE_ESCAPE){
+                            mode = STATE_EXIT;
+                        }
+                        if(event.key.keysym.scancode == SDL_SCANCODE_RSHIFT) {
+                            if(state.player.doubleJump>0){
+                                state.player.velocity.y = 1.3f;
+                                state.player.doubleJump -=1;
+                                state.player.jump = true;
+                                state.player.collidedBot = false;
+                                cout << "jump!!!!!!!" << endl;
+                            } //already jump twice
+                            
+                        }
+                        if(event.key.keysym.scancode == SDL_SCANCODE_LSHIFT) {
+                            if(state.enemy.doubleJump>0){
+                                state.enemy.velocity.y = 1.3f;
+                                state.enemy.doubleJump -=1;
+                                state.enemy.jump = true;
+                                state.enemy.collidedBot = false;
+                                cout << "jump!!!!!!!" << endl;
+                            } //already jump twice
+                        }
                     }
                 }
-                
-                
-                break;
-            case STATE_GAME_LEVEL_THREE:
-                if(win == true || lose == true){
-                    mode = STATE_GAME_BOSS;
+                worldToTileCoordinates(state.player.position.x,state.player.position.y-0.5f* state.player.size.y,&gridX,&gridY);
+                if(map.mapData[gridY][gridX] == 100){
+                    lose = true;
                 }
-                break;
-            case STATE_GAME_BOSS:
-                if(win == true || lose == true){
+                worldToTileCoordinates(state.enemy.position.x,state.enemy.position.y-0.5f* state.enemy.size.y,&gridX,&gridY);
+                if(map.mapData[gridY][gridX] == 100){
+                    lose = true;
+                }
+                if(win == true){
+                    mode = STATE_GAME_OVER;
+                }
+                if(lose == true){
                     mode = STATE_GAME_OVER;
                 }
                 break;
-            case STATE_GAME_OVER:
+            }
+            case STATE_GAME_OVER:{
                 while (SDL_PollEvent(&event)) {
                     if (event.type == SDL_QUIT || event.type == SDL_WINDOWEVENT_CLOSE) {
                         done = true;
+                    }else if(event.type == SDL_KEYDOWN){
+                        if(event.key.keysym.scancode == SDL_SCANCODE_ESCAPE){
+                            cout << "exit!"<<endl;
+                            mode = STATE_EXIT;
+                        }
                     }
                 }
                 break;
             }
-    }
+        }
 }
 
 void update(float elapsed) {
@@ -824,12 +966,29 @@ void update(float elapsed) {
 //    state.player.velocity.y = 0.0f;
     switch (mode) {
         case STATE_MAIN_MENU:
+            if(keys[SDL_SCANCODE_SPACE]){
+                    mainAnimate -= elapsed;
+                    if(mainAnimate < 0){
+                        if(mainSprite.index == 1){
+                            mainSprite.index = 0;
+                        }
+                        else{
+                            mainSprite.index = 1;
+                        }
+                        enemyAnimate = 0.1f;
+                    }
+            }else{
+                mainSprite.index = 1;
+            }
+            break;
+        case STATE_EXIT:
             break;
         case STATE_INSTRUCTION:
             break;
-        case STATE_GAME_LEVEL_ONE:{
+        case STATE_GAME_LEVEL_ONE:
+        case STATE_GAME_LEVEL_THREE:{
             if(keys[SDL_SCANCODE_LEFT] && !playerCollideLeft("player")){
-                cout << "left" <<endl;
+//                cout << "left" <<endl;
                 state.player.acceleration.x = -1.5f;
                 playerAnimate -= elapsed;
                 if(playerAnimate < 0 && !(state.player.jump)){
@@ -837,7 +996,7 @@ void update(float elapsed) {
                     playerAnimate = .1;
                 }
             }else if(keys[SDL_SCANCODE_RIGHT] && !playerCollideRight("player")){
-                cout << "right" << endl;
+//                cout << "right" << endl;
                 state.player.acceleration.x = 1.5f;
                 playerAnimate -= elapsed;
                 if(playerAnimate < 0 && !(state.player.jump)){
@@ -850,7 +1009,7 @@ void update(float elapsed) {
                 state.player.sprite.index = playerID;
             }
             if(keys[SDL_SCANCODE_A] && !playerCollideLeft("enemy")){
-                cout << "left" <<endl;
+//                cout << "left" <<endl;
                 state.enemy.acceleration.x = -1.5f;
                 enemyAnimate -= elapsed;
                 if(enemyAnimate < 0 && !(state.enemy.jump)){
@@ -858,7 +1017,7 @@ void update(float elapsed) {
                     enemyAnimate = .1;
                 }
             }else if(keys[SDL_SCANCODE_D] && !playerCollideRight("enemy")){
-                cout << "right" << endl;
+//                cout << "right" << endl;
                 state.enemy.acceleration.x = 1.5f;
                 enemyAnimate -= elapsed;
                 if(enemyAnimate < 0 && !(state.enemy.jump)){
@@ -870,33 +1029,31 @@ void update(float elapsed) {
                 enemyID = 1;
                 state.enemy.sprite.index = enemyID;
             }
-            if(state.player.collision_check(state.key)){
+            if(state.player.collision_check(state.key)||state.enemy.collision_check(state.key)){
                 state.key.position.x = -1000000;
                 win = true;
-//                cout << "win\n";
-//                mode = STATE_GAME_OVER;
             }
-//            if(state.player.collision_check(state.bomb)){
-//                state.player.position.x = -1000000;
-//                lose = true;
-//                cout << "lose\n";
-//                mode = STATE_GAME_OVER;
-//            }
+            for(int i = 0; i < 5; i++){
+                if(state.player.collision_check(state.stars[i])){
+                    state.player.score += 1;
+                    state.stars[i].position.x = -1000000;
+                }
+                if(state.enemy.collision_check(state.stars[i])){
+                    state.enemy.score += 1;
+                    state.stars[i].position.x = -1000000;
+                }
+            }
             if(!win && !lose){
                 state.player.update(elapsed);
                 state.enemy.update(elapsed);
-                for(int i = 0; i < 5; i ++){
-//                    state.stars[i].update(elapsed);
-//                    state.enemies[i].update(elapsed);
-                }
                 state.player.acceleration.x = 0.0f;
                 state.enemy.acceleration.x = 0.0f;
             }
             break;
         
-        }case STATE_GAME_LEVEL_TWO:
+        }case STATE_GAME_LEVEL_TWO:{
             if(keys[SDL_SCANCODE_LEFT] && !playerCollideLeft("player")){
-                cout << "left" <<endl;
+//                cout << "left" <<endl;
                 state.player.acceleration.x = -1.5f;
                 playerAnimate -= elapsed;
                 if(playerAnimate < 0){
@@ -904,7 +1061,7 @@ void update(float elapsed) {
                     playerAnimate = .1;
                 }
             }else if(keys[SDL_SCANCODE_RIGHT] && !playerCollideRight("player")){
-                cout << "right" << endl;
+//                cout << "right" << endl;
                 state.player.acceleration.x = 1.5f;
                 playerAnimate -= elapsed;
                 if(playerAnimate < 0){
@@ -912,7 +1069,7 @@ void update(float elapsed) {
                     playerAnimate = .1;
                 }
             }else if(keys[SDL_SCANCODE_UP] && !playerCollideTop("player")){
-                cout << "up" << endl;
+//                cout << "up" << endl;
                 state.player.acceleration.y = 1.5f;
                 playerAnimate -= elapsed;
                 if(playerAnimate < 0){
@@ -920,7 +1077,7 @@ void update(float elapsed) {
                     playerAnimate = .1;
                 }
             }else if(keys[SDL_SCANCODE_DOWN] && !playerCollideBottom("player")){
-                cout << "down" << endl;
+//                cout << "down" << endl;
                 state.player.acceleration.y = -1.5f;
                 playerAnimate -= elapsed;
                 if(playerAnimate < 0){
@@ -930,34 +1087,74 @@ void update(float elapsed) {
             }else{
                 state.player.velocity.x = 0.0f;
                 state.player.velocity.y = 0.0f;
+                playerID = 1;
+                state.player.sprite.index = playerID;
             }
-            if(state.player.collision_check(state.key)){
+            if(keys[SDL_SCANCODE_A] && !playerCollideLeft("enemy")){
+                //                cout << "left" <<endl;
+                state.enemy.acceleration.x = -1.5f;
+                enemyAnimate -= elapsed;
+                if(enemyAnimate < 0){
+                    animatenemy();
+                    enemyAnimate = .1;
+                }
+            }else if(keys[SDL_SCANCODE_D] && !playerCollideRight("enemy")){
+                //                cout << "right" << endl;
+                state.enemy.acceleration.x = 1.5f;
+                enemyAnimate -= elapsed;
+                if(enemyAnimate < 0){
+                    animatenemy();
+                    enemyAnimate = .1;
+                }
+            }else if(keys[SDL_SCANCODE_W] && !playerCollideTop("enemy")){
+                //                cout << "up" << endl;
+                state.enemy.acceleration.y = 1.5f;
+                enemyAnimate -= elapsed;
+                if(enemyAnimate < 0){
+                    animatenemy();
+                    enemyAnimate = .1;
+                }
+            }else if(keys[SDL_SCANCODE_S] && !playerCollideBottom("enemy")){
+                //                cout << "down" << endl;
+                state.enemy.acceleration.y = -1.5f;
+                enemyAnimate -= elapsed;
+                if(enemyAnimate < 0){
+                    animatenemy();
+                    enemyAnimate = .1;
+                }
+            }else{
+                state.enemy.velocity.x = 0.0f;
+                state.enemy.velocity.y = 0.0f;
+                enemyID = 1;
+                state.enemy.sprite.index = enemyID;
+            }
+            if(state.player.collision_check(state.key)||state.enemy.collision_check(state.key)){
                 state.key.position.x = -1000000;
                 win = true;
-                //                cout << "win\n";
-                //                mode = STATE_GAME_OVER;
             }
-            //            if(state.player.collision_check(state.bomb)){
-            //                state.player.position.x = -1000000;
-            //                lose = true;
-            //                cout << "lose\n";
-            //                mode = STATE_GAME_OVER;
-            //            }
+            for(int i = 0; i < 5; i++){
+                if(state.player.collision_check(state.stars[i])){
+                    state.player.score += 1;
+                    state.stars[i].position.x = -1000000;
+                }
+                if(state.enemy.collision_check(state.stars[i])){
+                    state.enemy.score += 1;
+                    state.stars[i].position.x = -1000000;
+                }
+            }
             if(!win && !lose){
                 state.player.update(elapsed);
-                for(int i = 0; i < 5; i ++){
-                    //                    state.stars[i].update(elapsed);
-                    //                    state.enemies[i].update(elapsed);
-                }
+                state.enemy.update(elapsed);
                 state.player.acceleration.x = 0.0f;
                 state.player.acceleration.y = 0.0f;
+                state.enemy.acceleration.x = 0.0f;
+                state.enemy.acceleration.y = 0.0f;
+
             }
             break;
-        case STATE_GAME_LEVEL_THREE:
-            break;
-        case STATE_GAME_BOSS:
-            break;
-        case STATE_GAME_OVER:
+//        case STATE_GAME_LEVEL_THREE:
+//            break;
+        }case STATE_GAME_OVER:
             break;
     }
 }
@@ -967,12 +1164,24 @@ void render() {
     
     switch (mode) {
         case STATE_MAIN_MENU:{
+            glClearColor(0.4f, 0.3f, 0.5f, 1.0f);
             DrawText(program, fontTexture, "Welcome back, my old friend!", -1.1f,0.7f,0.07f, 0.01f);
             modelMatrix = glm::mat4(1.0f);
-            modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0f, 0.15f, 0.0f));
+            modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0f, -0.15f, 0.0f));
             modelMatrix = glm::scale(modelMatrix, glm::vec3(1.7f, 1.7f, 0.0f));
             program.SetModelMatrix(modelMatrix);
-            glBindTexture(GL_TEXTURE_2D,mainTexture);
+            mainSprite.Draw(program);
+            DrawText(program, fontTexture, "Press Enter To Move On", 0.2f,-0.9f, 0.05f, 0.01f);
+            break;
+        }
+        case STATE_EXIT:{
+            modelMatrix = glm::mat4(1.0f);
+            glm::mat4 viewMatrix = glm::mat4(1.0f);
+            program.SetViewMatrix(viewMatrix);
+            modelMatrix = glm::mat4(1.0f);
+            modelMatrix = glm::scale(modelMatrix, glm::vec3(1.8f, 1.8f, 0.0f));
+            program.SetModelMatrix(modelMatrix);
+            glBindTexture(GL_TEXTURE_2D,exitTexture);
             float vertices[] = {-0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5, 0.5};
             glVertexAttribPointer(program.positionAttribute,2,GL_FLOAT,false,0,vertices);
             glEnableVertexAttribArray(program.positionAttribute);
@@ -982,15 +1191,11 @@ void render() {
             glDrawArrays(GL_TRIANGLES, 0,6);
             glDisableVertexAttribArray(program.positionAttribute);
             glDisableVertexAttribArray(program.texCoordAttribute);
-//            DrawText(program, fontTexture, "HINT: Press left/Right/Up/Down to move", -1.4f,-0.2f, 0.05f, 0.01f);
-            DrawText(program, fontTexture, "Press Enter To Move On", 0.2f,-0.9f, 0.05f, 0.01f);
             break;
-        }
-            
-        case STATE_INSTRUCTION:{
+        }case STATE_INSTRUCTION:{
             GLint mainTexture = LoadTexture(RESOURCE_FOLDER"instructions.png");
             modelMatrix = glm::mat4(1.0f);
-            modelMatrix = glm::translate(modelMatrix, glm::vec3(-0.3f, 0.1f, 0.0f));
+            modelMatrix = glm::translate(modelMatrix, glm::vec3(-0.32f, 0.0f, 0.0f));
             modelMatrix = glm::scale(modelMatrix, glm::vec3(2.0f, 2.0f, 0.0f));
             program.SetModelMatrix(modelMatrix);
             glBindTexture(GL_TEXTURE_2D,mainTexture);
@@ -1016,16 +1221,12 @@ void render() {
             state.key.draw(program);
             state.enemy.draw(program);
             for(int i = 0; i < 5; i ++){
-//                cout<<state.enemies[i].position.x<<" "<< state.enemies[i].position.x << endl;
                 state.stars[i].draw(program);
-//                state.enemies[i].draw(program);
             }
-
             //re-center
             glm::mat4 viewMatrix = glm::mat4(1.0f);
-            viewMatrix = glm::translate(viewMatrix, glm::vec3(-state.player.position.x, -state.player.position.y, 0.0f));
+            viewMatrix = glm::translate(viewMatrix, glm::vec3(-0.5*fabs(state.player.position.x+state.enemy.position.x), 0.5*fabs(state.player.position.y+state.enemy.position.y), 0.0f));
             program.SetViewMatrix(viewMatrix);
-
             break;
         }
             
@@ -1038,56 +1239,27 @@ void render() {
             state.key.draw(program);
             state.enemy.draw(program);
             for(int i = 0; i < 5; i ++){
-//                cout<<state.enemies[i].position.x<<" "<< state.enemies[i].position.x << endl;
                 state.stars[i].draw(program);
-//                state.enemies[i].draw(program);
             }
-            
             //re-center
             glm::mat4 viewMatrix = glm::mat4(1.0f);
-            viewMatrix = glm::translate(viewMatrix, glm::vec3(-state.player.position.x, -state.player.position.y, 0.0f));
+            viewMatrix = glm::translate(viewMatrix, glm::vec3(-0.5*fabs(state.player.position.x+state.enemy.position.x), 0.5*fabs(state.player.position.y+state.enemy.position.y), 0.0f));
             program.SetViewMatrix(viewMatrix);
             break;
         }case STATE_GAME_LEVEL_THREE:{
-//            map.Load(RESOURCE_FOLDER"map1.txt");
             modelMatrix = glm::mat4(1.0f);
             program.SetModelMatrix(modelMatrix);
-            program.SetColor(1.0f, 0.5f, 0.0f,1.0f);
-            glEnable(GL_BLEND);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-            glClearColor(0.2f, 0.5f, 0.7f, 1.0f);
+            glClearColor(0.6f, 0.6f, 0.1f, 1.0f);
             drawMap();
             state.player.draw(program);
-            //            state.key.draw(program);
-            //            for(int i = 0; i < 5; i ++){
-            //                state.stars[i].draw(program);
-            //                state.enemies[i].draw(program);
-            //            }
-            
+            state.key.draw(program);
+            state.enemy.draw(program);
+            for(int i = 0; i < 5; i ++){
+                state.stars[i].draw(program);
+            }
             //re-center
             glm::mat4 viewMatrix = glm::mat4(1.0f);
-            viewMatrix = glm::translate(viewMatrix, glm::vec3(-state.player.position.x, -state.player.position.y, 0.0f));
-            program.SetViewMatrix(viewMatrix);
-            break;
-        }case STATE_GAME_BOSS:{
-            map.Load(RESOURCE_FOLDER"map1.txt");
-            modelMatrix = glm::mat4(1.0f);
-            program.SetModelMatrix(modelMatrix);
-            program.SetColor(1.0f, 0.5f, 0.0f,1.0f);
-            glEnable(GL_BLEND);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-            glClearColor(0.2f, 0.5f, 0.7f, 1.0f);
-            drawMap();
-            state.player.draw(program);
-            //            state.key.draw(program);
-            //            for(int i = 0; i < 5; i ++){
-            //                state.stars[i].draw(program);
-            //                state.enemies[i].draw(program);
-            //            }
-            
-            //re-center
-            glm::mat4 viewMatrix = glm::mat4(1.0f);
-            viewMatrix = glm::translate(viewMatrix, glm::vec3(-state.player.position.x, -state.player.position.y, 0.0f));
+            viewMatrix = glm::translate(viewMatrix, glm::vec3(-0.5*fabs(state.player.position.x+state.enemy.position.x), 0.5*fabs(state.player.position.y+state.enemy.position.y), 0.0f));
             program.SetViewMatrix(viewMatrix);
             break;
         }case STATE_GAME_OVER:{
@@ -1095,13 +1267,14 @@ void render() {
             glm::mat4 viewMatrix = glm::mat4(1.0f);
             program.SetViewMatrix(viewMatrix);
             if(win == true){
-                cout << "win";
-                DrawText(program, fontTexture, "Finally", -1.12f,0.0f,0.05f, 0.01f);
-                DrawText(program, fontTexture, "Congret!",-1.12f,-0.4f, 0.05f, 0.03f);
+                DrawText(program, fontTexture, "Finally", -1.42f,0.2f,0.05f, 0.01f);
+                DrawText(program, fontTexture, "Congret!",-1.42f,0.0f, 0.05f, 0.03f);
+                DrawText(program, fontTexture, "p1 score: "+to_string(state.player.score),-1.42f,-0.2f, 0.05f, 0.03f);
+                DrawText(program, fontTexture, "p2 score: "+to_string(state.enemy.score),-1.42f,-0.4f, 0.05f, 0.03f);
                 glm::mat4 viewMatrix = glm::mat4(1.0f);
                 program.SetViewMatrix(viewMatrix);
                 modelMatrix = glm::mat4(1.0f);
-                modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0f, 0.15f, 0.0f));
+                modelMatrix = glm::translate(modelMatrix, glm::vec3(0.3f, 0.14f, 0.0f));
                 modelMatrix = glm::scale(modelMatrix, glm::vec3(1.7f, 1.7f, 0.0f));
                 program.SetModelMatrix(modelMatrix);
                 glBindTexture(GL_TEXTURE_2D,GoodjobTexture);
@@ -1116,7 +1289,6 @@ void render() {
                 glDisableVertexAttribArray(program.texCoordAttribute);
                 
             }else{
-                cout << "lose";
                 DrawText(program, fontTexture, "YOU DIED!",-1.42f,-0.0f, 0.05f, 0.03f);
                 DrawText(program, fontTexture, "GAME OVER!",-1.42f,-0.4f, 0.05f, 0.03f);
                 modelMatrix = glm::mat4(1.0f);

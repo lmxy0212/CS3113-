@@ -12,13 +12,8 @@
   <object id="5" name="star" type="star" gid="49" x="261.9" y="361.51" width="16" height="16"/>
   <object id="7" name="star" type="star" gid="49" x="504.55" y="491.02" width="16" height="16"/>
   <object id="8" name="star" type="star" gid="1073741873" x="791.409" y="598.593" width="16" height="16"/>
-  <object id="9" name="enemy2" type="enemy" gid="81" x="131.404" y="667.231" width="16" height="16"/>
-  <object id="10" name="enemy1" type="enemy" gid="81" x="56.8789" y="77.7179" width="16" height="16"/>
-  <object id="12" name="enemy3" type="enemy" gid="81" x="867.208" y="388.332" width="16" height="16"/>
-  <object id="13" name="enemy5" type="enemy" gid="81" x="512.129" y="105.458" width="16" height="16"/>
-  <object id="14" name="enemy4" type="enemy" gid="81" x="364.316" y="198.311" width="16" height="16"/>
-  <object id="16" name="enemy6" type="enemy" gid="81" x="869.766" y="157.39" width="16" height="16"/>
-  <object id="18" name="key" type="key" gid="87" x="768.699" y="30.9944" width="16" height="16"/>
+  <object id="10" name="enemy" type="enemy" gid="81" x="64.8523" y="606.622" width="16" height="16"/>
+  <object id="18" name="key" type="key" gid="87" x="181.324" y="573.187" width="16" height="16"/>
   <object id="19" name="player" type="player" gid="29" x="16.7674" y="605.567" width="16" height="16"/>
  </objectgroup>
 </map>
