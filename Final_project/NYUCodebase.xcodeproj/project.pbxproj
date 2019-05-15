@@ -42,7 +42,10 @@
 		B59B36B322850E60004AF68B /* key.png in Resources */ = {isa = PBXBuildFile; fileRef = B59B36B222850E60004AF68B /* key.png */; };
 		B59B36B522851433004AF68B /* key.png in Resources */ = {isa = PBXBuildFile; fileRef = B59B36B422851433004AF68B /* key.png */; };
 		B59B36B722851A3C004AF68B /* exit.png in Resources */ = {isa = PBXBuildFile; fileRef = B59B36B622851A3B004AF68B /* exit.png */; };
-		B5AC2B4B22851D83009E4120 /* instructions.png in Resources */ = {isa = PBXBuildFile; fileRef = B5AC2B4A22851D82009E4120 /* instructions.png */; };
+		B5AC2B4D2285B5DB009E4120 /* my_hero.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = B5AC2B4C2285B5DB009E4120 /* my_hero.mp3 */; };
+		B5AC2B4F2285F107009E4120 /* footstep.wav in Resources */ = {isa = PBXBuildFile; fileRef = B5AC2B4E2285F107009E4120 /* footstep.wav */; };
+		B5AC2B512285F330009E4120 /* collect.wav in Resources */ = {isa = PBXBuildFile; fileRef = B5AC2B502285F330009E4120 /* collect.wav */; };
+		B5AC2B5322862654009E4120 /* instructions.png in Resources */ = {isa = PBXBuildFile; fileRef = B5AC2B5222862654009E4120 /* instructions.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -87,7 +90,10 @@
 		B59B36B222850E60004AF68B /* key.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = key.png; sourceTree = "<group>"; };
 		B59B36B422851433004AF68B /* key.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = key.png; sourceTree = "<group>"; };
 		B59B36B622851A3B004AF68B /* exit.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = exit.png; sourceTree = "<group>"; };
-		B5AC2B4A22851D82009E4120 /* instructions.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = instructions.png; sourceTree = "<group>"; };
+		B5AC2B4C2285B5DB009E4120 /* my_hero.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = my_hero.mp3; sourceTree = "<group>"; };
+		B5AC2B4E2285F107009E4120 /* footstep.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = footstep.wav; sourceTree = "<group>"; };
+		B5AC2B502285F330009E4120 /* collect.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = collect.wav; sourceTree = "<group>"; };
+		B5AC2B5222862654009E4120 /* instructions.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = instructions.png; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -169,8 +175,11 @@
 		6D5A86E119AE5CAA0066C1FD /* Code */ = {
 			isa = PBXGroup;
 			children = (
+				B5AC2B4E2285F107009E4120 /* footstep.wav */,
+				B5AC2B502285F330009E4120 /* collect.wav */,
+				B5AC2B4C2285B5DB009E4120 /* my_hero.mp3 */,
+				B5AC2B5222862654009E4120 /* instructions.png */,
 				B59B36B622851A3B004AF68B /* exit.png */,
-				B5AC2B4A22851D82009E4120 /* instructions.png */,
 				B59B36B222850E60004AF68B /* key.png */,
 				B59B36B422851433004AF68B /* key.png */,
 				B59B36B02284EF9F004AF68B /* sprites.png */,
@@ -260,6 +269,7 @@
 				B50242752271667E00E7B796 /* GG.png in Resources */,
 				B502425822713BC100E7B796 /* map1.txt in Resources */,
 				B50242772271667E00E7B796 /* bakugoSprite.png in Resources */,
+				B5AC2B5322862654009E4120 /* instructions.png in Resources */,
 				B50242822272052300E7B796 /* todoroki1.png in Resources */,
 				6D5A86B819AE5C710066C1FD /* InfoPlist.strings in Resources */,
 				B50242802272052300E7B796 /* todoroki2.png in Resources */,
@@ -269,11 +279,11 @@
 				B59B36B522851433004AF68B /* key.png in Resources */,
 				B50242812272052300E7B796 /* bakugo2.png in Resources */,
 				B502425522713BBA00E7B796 /* map2.txt in Resources */,
+				B5AC2B512285F330009E4120 /* collect.wav in Resources */,
 				6D5A86C619AE5C710066C1FD /* Images.xcassets in Resources */,
 				B50242762271667E00E7B796 /* GoodJob.png in Resources */,
 				6D5A86BE19AE5C710066C1FD /* Credits.rtf in Resources */,
 				B50242882277EF0C00E7B796 /* durian.png in Resources */,
-				B5AC2B4B22851D83009E4120 /* instructions.png in Resources */,
 				B59B36B722851A3C004AF68B /* exit.png in Resources */,
 				B502425622713BBA00E7B796 /* map3.txt in Resources */,
 				B59B36B322850E60004AF68B /* key.png in Resources */,
@@ -282,8 +292,10 @@
 				B527BA482260D2320041A27D /* pixel_font.png in Resources */,
 				B502427F2272052300E7B796 /* bakugo1.png in Resources */,
 				6DEF23C41B96CC2600BCE792 /* vertex.glsl in Resources */,
+				B5AC2B4F2285F107009E4120 /* footstep.wav in Resources */,
 				6DC7076A1BA7273500225B7D /* vertex_textured.glsl in Resources */,
 				B50242742271667E00E7B796 /* mainManue.png in Resources */,
+				B5AC2B4D2285B5DB009E4120 /* my_hero.mp3 in Resources */,
 				B59B36AF2284EDCB004AF68B /* mainManue.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -408,6 +420,7 @@
 					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
 					/Library/Frameworks/SDL2_image.framework/Versions/A/Headers,
 					/Library/Frameworks/SDL2.framework/Versions/A/Headers,
+					/Library/Frameworks/SDL2_mixer.framework/Versions/A/Headers,
 				);
 				INFOPLIST_FILE = "NYUCodebase/NYUCodebase-Info.plist";
 				PRODUCT_NAME = "$(TARGET_NAME)";

@@ -1,4 +1,4 @@
-//******************Platformer*******************
+//******************Final Project*******************
 #ifdef _WINDOWS
 #include <GL/glew.h>
 #endif
@@ -6,7 +6,7 @@
 #define GL_GLEXT_PROTOTYPES 1
 #include <SDL_opengl.h>
 #include <SDL_image.h>
-//#include <SDL_mixer.h>
+#include <SDL_mixer.h>
 #include <math.h>
 #include <vector>
 #include "glm/mat4x4.hpp"
@@ -27,7 +27,9 @@
 #define MAX_TIMESTEPS 6
 using namespace std;
 //globals
-//Mix_Music *bgm;
+Mix_Music *bgm;
+Mix_Chunk *footsteps;
+Mix_Chunk *collect;
 ShaderProgram program;
 glm::mat4 modelMatrix = glm::mat4(1.0f);
 GLuint spriteTexture;
@@ -43,9 +45,6 @@ GLint exitTexture;
 SDL_Event event;
 enum GameMode {STATE_MAIN_MENU,STATE_INSTRUCTION, STATE_EXIT,STATE_GAME_LEVEL_ONE, STATE_GAME_LEVEL_TWO, STATE_GAME_LEVEL_THREE, STATE_GAME_OVER};
 GameMode mode = STATE_MAIN_MENU;
-//GameMode mode = STATE_GAME_LEVEL_ONE;
-//GameMode mode = STATE_GAME_LEVEL_TWO;
-//GameMode mode = STATE_GAME_LEVEL_THREE;
 
 float playerAnimate = 0.1f;
 float enemyAnimate = 0.1f;
@@ -58,7 +57,6 @@ float accumulator = 0.0f;
 //int sprite_count_y = 8;
 float tileSize = 0.15f;
 float scale = 1.5f;
-float elapsed = 0.0f;
 float lastFrameTicks = 0.0f;
 bool done = false;
 bool initial = true;
@@ -204,6 +202,18 @@ SheetSprite mainSprite;
 
 float lerp(float v0, float v1, float t) {
     return (1.0f - t) * v0 + t * v1;
+}
+float easeInOut(float from, float to, float time) {
+    float tVal;
+    if(time > 0.5) {
+        float oneMinusT = 1.0f-((0.5f-time)*-2.0f);
+        tVal =  1.0f - ((oneMinusT * oneMinusT * oneMinusT * oneMinusT *
+                         oneMinusT) * 0.5f);
+    } else {
+        time *= 2.0;
+        tVal = (time*time*time*time*time)/2.0;
+    }
+    return (1.0f-tVal)*from + tVal*to;
 }
 
 void worldToTileCoordinates(float worldX, float worldY, int *gridX, int *gridY) {
@@ -661,6 +671,18 @@ bool playerCollideRight(string type){
     return false;
 }
 
+float mapValue(float value, float srcMin, float srcMax, float dstMin, float dstMax) {
+    float retVal = dstMin + ((value - srcMin)/(srcMax-srcMin) * (dstMax-dstMin));
+    if(retVal < dstMin) {
+        retVal = dstMin;
+    }
+    if(retVal > dstMax) {
+        retVal = dstMax;
+    }
+    return retVal;
+}
+
+float animationTime = 0.0f;
 
 void drawMap(){
     int sprite_count_x = 16;
@@ -728,8 +750,8 @@ void setUp(){
     program.SetProjectionMatrix(projectionMatrix);
     program.SetViewMatrix(viewMatrix);
     program.SetModelMatrix(modelMatrix);
-    
-//    bgm = Mix_LoadMUS(RESOURCE_FOLDER"the dawn.mp3");
+    Mix_OpenAudio( 44100, MIX_DEFAULT_FORMAT, 2, 4096 );
+    bgm = Mix_LoadMUS(RESOURCE_FOLDER"my_hero.mp3");
     fontTexture = LoadTexture(RESOURCE_FOLDER"pixel_font.png");
     spriteTexture = LoadTexture(RESOURCE_FOLDER"sprites.png");
     todorokiSprite = LoadTexture(RESOURCE_FOLDER"todorokiSprite.png");
@@ -741,6 +763,9 @@ void setUp(){
     mainTexture = LoadTexture(RESOURCE_FOLDER"mainManue.png");
     exitTexture = LoadTexture(RESOURCE_FOLDER"exit.png");
     mainSprite = SheetSprite(mainTexture,1,0.75,1,2);
+    footsteps = Mix_LoadWAV(RESOURCE_FOLDER"footstep.wav");
+    collect = Mix_LoadWAV(RESOURCE_FOLDER"collect.wav");
+    mainTexture = LoadTexture(RESOURCE_FOLDER"instructions.png");
     playertexture = SheetSprite(bakugoSprite,playerID,tileSize*scale,2,1);
     enemytexture = SheetSprite(todorokiSprite,enemyID,tileSize*scale,2,1);
 //    playertexture = SheetSprite(spriteTexture,80,tileSize*scale,16,8);
@@ -793,6 +818,7 @@ void processEvents() {
                 }else if(event.type == SDL_KEYDOWN){
                     if(event.key.keysym.scancode == SDL_SCANCODE_RETURN){
                         mode = STATE_GAME_LEVEL_ONE;
+                        
                     }
                     if(event.key.keysym.scancode == SDL_SCANCODE_ESCAPE){
                         mode = STATE_EXIT;
@@ -851,7 +877,6 @@ void processEvents() {
                 state.player.score = temp1;
                 state.enemy.score = temp2;
                 mode = STATE_GAME_LEVEL_TWO;
-                //                    cout<<map.mapWidth << " " << map.mapHeight<<endl;
                 GRAVITY = 0.0f;
             }
             if(lose == true){
@@ -953,6 +978,20 @@ void processEvents() {
                             cout << "exit!"<<endl;
                             mode = STATE_EXIT;
                         }
+                        if(event.key.keysym.scancode == SDL_SCANCODE_SPACE){
+                            win = false;
+                            lose = false;
+//                            int temp1 = state.player.score;
+//                            int temp2 = state.enemy.score;
+                            initial = true;
+                            set_state(state);
+                            map.Load(RESOURCE_FOLDER"map1.txt");
+                            cout<<"GO TO L1"<<endl;
+//                            state.player.score = temp1;
+//                            state.enemy.score = temp2;
+                            mode = STATE_GAME_LEVEL_ONE;
+//                            GRAVITY = 1.0f;
+                        }
                     }
                 }
                 break;
@@ -961,22 +1000,24 @@ void processEvents() {
 }
 
 void update(float elapsed) {
+    animationTime = animationTime + elapsed;
     const Uint8* keys = SDL_GetKeyboardState(NULL);
     modelMatrix = glm::mat4(1.0f);
 //    state.player.velocity.y = 0.0f;
     switch (mode) {
         case STATE_MAIN_MENU:
             if(keys[SDL_SCANCODE_SPACE]){
-                    mainAnimate -= elapsed;
-                    if(mainAnimate < 0){
-                        if(mainSprite.index == 1){
-                            mainSprite.index = 0;
-                        }
-                        else{
-                            mainSprite.index = 1;
-                        }
-                        enemyAnimate = 0.1f;
+                Mix_PlayChannel( -1, footsteps, 0);
+                mainAnimate -= elapsed;
+                if(mainAnimate < 0){
+                    if(mainSprite.index == 1){
+                        mainSprite.index = 0;
                     }
+                    else{
+                        mainSprite.index = 1;
+                    }
+                    enemyAnimate = 0.1f;
+                }
             }else{
                 mainSprite.index = 1;
             }
@@ -989,6 +1030,7 @@ void update(float elapsed) {
         case STATE_GAME_LEVEL_THREE:{
             if(keys[SDL_SCANCODE_LEFT] && !playerCollideLeft("player")){
 //                cout << "left" <<endl;
+//                Mix_PlayChannel( -1, footsteps, 0);
                 state.player.acceleration.x = -1.5f;
                 playerAnimate -= elapsed;
                 if(playerAnimate < 0 && !(state.player.jump)){
@@ -997,6 +1039,7 @@ void update(float elapsed) {
                 }
             }else if(keys[SDL_SCANCODE_RIGHT] && !playerCollideRight("player")){
 //                cout << "right" << endl;
+//                Mix_PlayChannel( -1, footsteps, 0);
                 state.player.acceleration.x = 1.5f;
                 playerAnimate -= elapsed;
                 if(playerAnimate < 0 && !(state.player.jump)){
@@ -1010,6 +1053,7 @@ void update(float elapsed) {
             }
             if(keys[SDL_SCANCODE_A] && !playerCollideLeft("enemy")){
 //                cout << "left" <<endl;
+//                Mix_PlayChannel( -1, footsteps, 0);
                 state.enemy.acceleration.x = -1.5f;
                 enemyAnimate -= elapsed;
                 if(enemyAnimate < 0 && !(state.enemy.jump)){
@@ -1018,6 +1062,7 @@ void update(float elapsed) {
                 }
             }else if(keys[SDL_SCANCODE_D] && !playerCollideRight("enemy")){
 //                cout << "right" << endl;
+//                Mix_PlayChannel( -1, footsteps, 0);
                 state.enemy.acceleration.x = 1.5f;
                 enemyAnimate -= elapsed;
                 if(enemyAnimate < 0 && !(state.enemy.jump)){
@@ -1030,15 +1075,18 @@ void update(float elapsed) {
                 state.enemy.sprite.index = enemyID;
             }
             if(state.player.collision_check(state.key)||state.enemy.collision_check(state.key)){
+                Mix_PlayChannel( -1, collect, 0);
                 state.key.position.x = -1000000;
                 win = true;
             }
             for(int i = 0; i < 5; i++){
                 if(state.player.collision_check(state.stars[i])){
+                    Mix_PlayChannel( -1, collect, 0);
                     state.player.score += 1;
                     state.stars[i].position.x = -1000000;
                 }
                 if(state.enemy.collision_check(state.stars[i])){
+                    Mix_PlayChannel( -1, collect, 0);
                     state.enemy.score += 1;
                     state.stars[i].position.x = -1000000;
                 }
@@ -1054,6 +1102,7 @@ void update(float elapsed) {
         }case STATE_GAME_LEVEL_TWO:{
             if(keys[SDL_SCANCODE_LEFT] && !playerCollideLeft("player")){
 //                cout << "left" <<endl;
+//                Mix_PlayChannel( -1, footsteps, 0);
                 state.player.acceleration.x = -1.5f;
                 playerAnimate -= elapsed;
                 if(playerAnimate < 0){
@@ -1062,6 +1111,7 @@ void update(float elapsed) {
                 }
             }else if(keys[SDL_SCANCODE_RIGHT] && !playerCollideRight("player")){
 //                cout << "right" << endl;
+//                Mix_PlayChannel( -1, footsteps, 0);
                 state.player.acceleration.x = 1.5f;
                 playerAnimate -= elapsed;
                 if(playerAnimate < 0){
@@ -1070,6 +1120,7 @@ void update(float elapsed) {
                 }
             }else if(keys[SDL_SCANCODE_UP] && !playerCollideTop("player")){
 //                cout << "up" << endl;
+//                Mix_PlayChannel( -1, footsteps, 0);
                 state.player.acceleration.y = 1.5f;
                 playerAnimate -= elapsed;
                 if(playerAnimate < 0){
@@ -1078,6 +1129,7 @@ void update(float elapsed) {
                 }
             }else if(keys[SDL_SCANCODE_DOWN] && !playerCollideBottom("player")){
 //                cout << "down" << endl;
+//                Mix_PlayChannel( -1, footsteps, 0);
                 state.player.acceleration.y = -1.5f;
                 playerAnimate -= elapsed;
                 if(playerAnimate < 0){
@@ -1092,6 +1144,7 @@ void update(float elapsed) {
             }
             if(keys[SDL_SCANCODE_A] && !playerCollideLeft("enemy")){
                 //                cout << "left" <<endl;
+//                Mix_PlayChannel( -1, footsteps, 0);
                 state.enemy.acceleration.x = -1.5f;
                 enemyAnimate -= elapsed;
                 if(enemyAnimate < 0){
@@ -1100,6 +1153,7 @@ void update(float elapsed) {
                 }
             }else if(keys[SDL_SCANCODE_D] && !playerCollideRight("enemy")){
                 //                cout << "right" << endl;
+//                Mix_PlayChannel( -1, footsteps, 0);
                 state.enemy.acceleration.x = 1.5f;
                 enemyAnimate -= elapsed;
                 if(enemyAnimate < 0){
@@ -1116,6 +1170,7 @@ void update(float elapsed) {
                 }
             }else if(keys[SDL_SCANCODE_S] && !playerCollideBottom("enemy")){
                 //                cout << "down" << endl;
+//                Mix_PlayChannel( -1, footsteps, 0);
                 state.enemy.acceleration.y = -1.5f;
                 enemyAnimate -= elapsed;
                 if(enemyAnimate < 0){
@@ -1129,15 +1184,19 @@ void update(float elapsed) {
                 state.enemy.sprite.index = enemyID;
             }
             if(state.player.collision_check(state.key)||state.enemy.collision_check(state.key)){
+                Mix_PlayChannel( -1, collect, 0);
+                
                 state.key.position.x = -1000000;
                 win = true;
             }
             for(int i = 0; i < 5; i++){
                 if(state.player.collision_check(state.stars[i])){
+                    Mix_PlayChannel( -1, collect, 0);
                     state.player.score += 1;
                     state.stars[i].position.x = -1000000;
                 }
                 if(state.enemy.collision_check(state.stars[i])){
+                    Mix_PlayChannel( -1, collect, 0);
                     state.enemy.score += 1;
                     state.stars[i].position.x = -1000000;
                 }
@@ -1161,16 +1220,16 @@ void update(float elapsed) {
 
 void render() {
     glClear(GL_COLOR_BUFFER_BIT);
-    
     switch (mode) {
         case STATE_MAIN_MENU:{
             glClearColor(0.4f, 0.3f, 0.5f, 1.0f);
             DrawText(program, fontTexture, "Welcome back, my old friend!", -1.1f,0.7f,0.07f, 0.01f);
             modelMatrix = glm::mat4(1.0f);
-            modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0f, -0.15f, 0.0f));
-            modelMatrix = glm::scale(modelMatrix, glm::vec3(1.7f, 1.7f, 0.0f));
+            modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0f, -0.05f, 0.0f));
+            modelMatrix = glm::scale(modelMatrix, glm::vec3(1.8f, 1.6f, 0.0f));
             program.SetModelMatrix(modelMatrix);
             mainSprite.Draw(program);
+            DrawText(program, fontTexture, "Created by Manxueying Li", 0.4f,-0.7f, 0.04f, 0.01f);
             DrawText(program, fontTexture, "Press Enter To Move On", 0.2f,-0.9f, 0.05f, 0.01f);
             break;
         }
@@ -1179,7 +1238,7 @@ void render() {
             glm::mat4 viewMatrix = glm::mat4(1.0f);
             program.SetViewMatrix(viewMatrix);
             modelMatrix = glm::mat4(1.0f);
-            modelMatrix = glm::scale(modelMatrix, glm::vec3(1.8f, 1.8f, 0.0f));
+            modelMatrix = glm::scale(modelMatrix, glm::vec3(2.1f, 2.1f, 0.0f));
             program.SetModelMatrix(modelMatrix);
             glBindTexture(GL_TEXTURE_2D,exitTexture);
             float vertices[] = {-0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5, 0.5};
@@ -1193,13 +1252,14 @@ void render() {
             glDisableVertexAttribArray(program.texCoordAttribute);
             break;
         }case STATE_INSTRUCTION:{
-            GLint mainTexture = LoadTexture(RESOURCE_FOLDER"instructions.png");
+            float animationValue = mapValue(animationTime, 5.0f, 20.0f, 0.0f, 1.0f);
             modelMatrix = glm::mat4(1.0f);
-            modelMatrix = glm::translate(modelMatrix, glm::vec3(-0.32f, 0.0f, 0.0f));
-            modelMatrix = glm::scale(modelMatrix, glm::vec3(2.0f, 2.0f, 0.0f));
+            modelMatrix = glm::scale(modelMatrix, glm::vec3(1.9f, 1.9f, 0.0f));
+            float yPos = lerp(-1.0f, 1.5f, animationValue);
+            modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0f,yPos, 0.0f));
             program.SetModelMatrix(modelMatrix);
             glBindTexture(GL_TEXTURE_2D,mainTexture);
-            float vertices[] = {-0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5, 0.5};
+            float vertices[] = {-0.5, -1.0, 0.5, -1.0, 0.5, 1.0, -0.5, -1.0, 0.5, 1.0, -0.5, 1.0};
             glVertexAttribPointer(program.positionAttribute,2,GL_FLOAT,false,0,vertices);
             glEnableVertexAttribArray(program.positionAttribute);
             float texCoords[] = {0.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0};
@@ -1314,7 +1374,7 @@ void render() {
 int main(int argc, char *argv[])
 {
     setUp();
-
+    Mix_PlayMusic(bgm, -1);
     while (!done) {
         float ticks = (float)SDL_GetTicks()/1000.0f;
         float elapsed = ticks - lastFrameTicks;
