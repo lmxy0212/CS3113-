@@ -1000,7 +1000,6 @@ void processEvents() {
 }
 
 void update(float elapsed) {
-    animationTime = animationTime + elapsed;
     const Uint8* keys = SDL_GetKeyboardState(NULL);
     modelMatrix = glm::mat4(1.0f);
 //    state.player.velocity.y = 0.0f;
@@ -1025,6 +1024,7 @@ void update(float elapsed) {
         case STATE_EXIT:
             break;
         case STATE_INSTRUCTION:
+            animationTime = animationTime + elapsed;
             break;
         case STATE_GAME_LEVEL_ONE:
         case STATE_GAME_LEVEL_THREE:{
@@ -1252,10 +1252,10 @@ void render() {
             glDisableVertexAttribArray(program.texCoordAttribute);
             break;
         }case STATE_INSTRUCTION:{
-            float animationValue = mapValue(animationTime, 5.0f, 20.0f, 0.0f, 1.0f);
+            float animationValue = mapValue(animationTime, 0.0f, 15.0f, 0.0f, 1.0f);
             modelMatrix = glm::mat4(1.0f);
             modelMatrix = glm::scale(modelMatrix, glm::vec3(1.9f, 1.9f, 0.0f));
-            float yPos = lerp(-1.0f, 1.5f, animationValue);
+            float yPos = lerp(-1.0f, 0.75f, animationValue);
             modelMatrix = glm::translate(modelMatrix, glm::vec3(0.0f,yPos, 0.0f));
             program.SetModelMatrix(modelMatrix);
             glBindTexture(GL_TEXTURE_2D,mainTexture);
