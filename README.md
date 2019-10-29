@@ -1,4 +1,4 @@
-# This repository is for CS3113 -- Intro to game programming
+# OpenGL game projects:
 
 - Project #1: 2D scene 
 - Project #2: Pong
